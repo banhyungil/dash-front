@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getIngestStatus } from '../api/client';
+import { getIngestStatus } from '../api/ingest';
 
 export default function IngestStatus() {
   const { data: status, isLoading, refetch } = useQuery({

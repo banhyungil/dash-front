@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchMonths, fetchDevices, fetchDates, testExport, type MonthInfo, type DateInfo } from '../api/client';
+import { fetchMonths, fetchDevices, fetchDates, exportCycles } from '../api/cycles';
+import type { MonthInfo, DateInfo } from '../api/types';
 
 export default function DateSelector() {
   const navigate = useNavigate();
@@ -66,7 +67,7 @@ export default function DateSelector() {
     setTesting(true);
 
     try {
-      const result = await testExport(selectedMonth, selectedDate);
+      const result = await exportCycles(selectedMonth, selectedDate);
       alert(
         `Test Export Complete!\n\n` +
         `Test Directory: ${result.test_dir}\n` +

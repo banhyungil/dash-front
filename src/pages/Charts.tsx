@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { fetchDailyData } from '../api/client';
+import { fetchDailyCycles } from '../api/cycles';
 import RpmChart from '../components/RpmChart';
 import VibrationChart from '../components/VibrationChart';
 
@@ -14,7 +14,7 @@ export default function Charts() {
 
   const { data: dailyData, isLoading, error } = useQuery({
     queryKey: ['daily-data', month, date],
-    queryFn: () => fetchDailyData(month!, date!),
+    queryFn: () => fetchDailyCycles(month!, date!),
     enabled: !!month && !!date,
   });
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { scanFolder, ingestPaths, type ScanFile, type IngestResult as IngestResultType } from '../api/client';
+import { scanFolder, ingestFiles } from '../api/ingest';
+import type { ScanFile, IngestResult as IngestResultType } from '../api/types';
 import IngestResult from './IngestResult';
 
 export default function PathIngest() {
@@ -55,7 +56,7 @@ export default function PathIngest() {
     setIngesting(true);
 
     try {
-      const res = await ingestPaths(Array.from(selected));
+      const res = await ingestFiles(Array.from(selected));
       setResult(res);
       toast.success(`${res.success_cycles} cycles 적재 완료`);
     } catch (err) {

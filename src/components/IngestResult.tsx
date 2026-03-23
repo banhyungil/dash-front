@@ -1,4 +1,4 @@
-import type { IngestResult as IngestResultType } from '../api/client';
+import type { IngestResult as IngestResultType } from '../api/types';
 
 interface IngestResultProps {
   result: IngestResultType;

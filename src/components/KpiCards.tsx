@@ -1,5 +1,5 @@
 import React from 'react';
-import { CycleData } from '../api/client';
+import type { CycleData } from '../api/types';
 
 interface KpiCardsProps {
   cycles: CycleData[];

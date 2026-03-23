@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import Plot from 'react-plotly.js';
-import type { CycleData } from '../api/client';
+import type { CycleData } from '../api/types';
 
 interface VibrationChartProps {
   cycles: CycleData[];

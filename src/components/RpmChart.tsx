@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
-import type { CycleData } from '../api/client';
+import type { CycleData } from '../api/types';
 
 interface RpmChartProps {
   cycles: CycleData[];

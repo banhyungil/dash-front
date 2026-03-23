@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
-import { uploadFiles, type IngestResult as IngestResultType } from '../api/client';
+import { uploadFiles } from '../api/ingest';
+import type { IngestResult as IngestResultType } from '../api/types';
 import IngestResult from './IngestResult';
 
 export default function FileUpload() {
