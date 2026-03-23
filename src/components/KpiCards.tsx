@@ -19,6 +19,14 @@ const KpiCards: React.FC<KpiCardsProps> = ({ cycles }) => {
     ? Math.max(...cycles.map(cycle => cycle.mpm_max))
     : 0;
 
+  // 평균 RPM 계산
+  const avgRpm = cycles.length > 0
+    ? cycles.reduce((sum, cycle) => sum + cycle.rpm_mean, 0) / cycles.length
+    : 0;
+
+  // 가동 롤러 수 (고유 session 수)
+  const activeSessions = new Set(cycles.map(cycle => cycle.session)).size;
+
   // 진동 이벤트 계산 (0.3g 이상)
   const vibrationEvents = cycles.reduce((count, cycle) => {
     // Pulse accelerometer 체크
@@ -38,66 +46,26 @@ const KpiCards: React.FC<KpiCardsProps> = ({ cycles }) => {
   }, 0);
 
   const cards = [
-    {
-      label: '총 가동시간',
-      value: `${totalOperationTime.toFixed(1)}h`,
-      color: '#2563EB'
-    },
-    {
-      label: '평균 MPM',
-      value: `${avgMpm.toFixed(1)} m/m`,
-      color: '#0FB880'
-    },
-    {
-      label: '최고 MPM',
-      value: `${maxMpm.toFixed(1)} m/m`,
-      color: '#F49E0A'
-    },
-    {
-      label: '진동 이벤트',
-      value: `${vibrationEvents}건`,
-      color: vibrationEvents > 0 ? '#EF4444' : '#64748B'
-    }
+    { label: '총 사이클', value: `${cycles.length}`, colorClass: 'text-brand' },
+    { label: '총 가동시간', value: `${totalOperationTime.toFixed(1)}h`, colorClass: 'text-brand' },
+    { label: '가동 롤러', value: `${activeSessions} / 4`, colorClass: 'text-green' },
+    { label: '평균 RPM', value: `${avgRpm.toFixed(1)}`, colorClass: 'text-green' },
+    { label: '평균 MPM', value: `${avgMpm.toFixed(1)} m/m`, colorClass: 'text-green' },
+    { label: '최고 MPM', value: `${maxMpm.toFixed(1)} m/m`, colorClass: 'text-orange' },
+    { label: '진동 이벤트', value: `${vibrationEvents}건`, colorClass: vibrationEvents > 0 ? 'text-red' : 'text-muted' },
   ];
 
   return (
-    <div style={{
-      display: 'flex',
-      gap: '16px',
-      marginBottom: '24px',
-      flexWrap: 'wrap'
-    }}>
+    <div className="flex gap-3 flex-wrap">
       {cards.map((card, index) => (
         <div
           key={index}
-          style={{
-            flex: '1 1 200px',
-            minWidth: '200px',
-            background: '#F0F4F9',
-            border: '1px solid #E2E8EF',
-            borderRadius: '12px',
-            padding: '20px',
-            textAlign: 'center',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-          }}
+          className="flex-1 min-w-32 bg-overlay border border-border rounded-xl px-4 py-3 text-center"
         >
-          <div style={{
-            fontSize: '13px',
-            color: '#64748B',
-            fontWeight: 600,
-            marginBottom: '8px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
-          }}>
+          <div className="text-[11px] text-subtext font-semibold uppercase tracking-wide mb-1">
             {card.label}
           </div>
-          <div style={{
-            fontSize: '32px',
-            fontWeight: 700,
-            color: card.color,
-            fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, monospace'
-          }}>
+          <div className={`text-2xl font-bold ${card.colorClass}`}>
             {card.value}
           </div>
         </div>
