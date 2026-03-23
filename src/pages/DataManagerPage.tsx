@@ -24,7 +24,7 @@ export default function DataManagerPage() {
         <div className="w-20" />
       </div>
 
-      <div className="flex-1 overflow-auto p-6 flex flex-col gap-6 max-w-[800px] mx-auto w-full">
+      <div className="flex-1 overflow-auto p-6 flex flex-col gap-6 max-w-200 mx-auto w-full">
         {/* Ingest section */}
         <div className="bg-overlay rounded-xl p-6">
           <h2 className="text-base font-semibold text-text mb-4">데이터 적재</h2>
@@ -54,7 +54,7 @@ export default function DataManagerPage() {
           </div>
 
           {/* Tab content */}
-          <div className="min-h-[200px]">
+          <div className="min-h-50">
             {activeTab === 'path' && <PathIngest />}
             {activeTab === 'upload' && <FileUpload />}
           </div>

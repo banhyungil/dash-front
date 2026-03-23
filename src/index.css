@@ -15,20 +15,27 @@
   --color-red: #EF4444;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@layer base {
+  body {
+    font-family: 'Segoe UI', 'Noto Sans KR', -apple-system, sans-serif;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    overflow: hidden;
+  }
 
-body {
-  font-family: 'Segoe UI', 'Noto Sans KR', -apple-system, sans-serif;
-  background: #1e1e2e;
-  color: #cdd6f4;
-  overflow: hidden;
-}
+  #root {
+    width: 100vw;
+    height: 100vh;
+  }
 
-#root {
-  width: 100vw;
-  height: 100vh;
+  /* Restore form element styles that Tailwind preflight resets */
+  button, select, input {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  select {
+    background-color: #1e1e2e;
+  }
 }

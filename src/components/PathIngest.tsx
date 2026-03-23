@@ -94,6 +94,7 @@ export default function PathIngest() {
       {files.length > 0 && (
         <div className="mt-4">
           <div className="text-[13px] font-semibold text-subtext mb-2">스캔 결과:</div>
+          <div className="max-h-60 overflow-y-auto">
           {files.map((file) => (
             <label key={file.path} className="flex items-center gap-2 py-1.5 cursor-pointer text-[13px]">
               <input
@@ -113,6 +114,7 @@ export default function PathIngest() {
               </span>
             </label>
           ))}
+          </div>
 
           <div className="mt-3 text-[13px] text-subtext">
             선택: {selectedCount}개 파일 / {selectedCycles} cycles
