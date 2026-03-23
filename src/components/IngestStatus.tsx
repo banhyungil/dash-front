@@ -9,8 +9,8 @@ export default function IngestStatus() {
 
   if (isLoading) {
     return (
-      <div style={styles.container}>
-        <p style={{ color: '#a6adc8' }}>적재 현황 로딩 중...</p>
+      <div className="p-6">
+        <p className="text-subtext">적재 현황 로딩 중...</p>
       </div>
     );
   }
@@ -18,32 +18,35 @@ export default function IngestStatus() {
   if (!status) return null;
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h3 style={styles.title}>적재 현황</h3>
-        <button style={styles.refreshBtn} onClick={() => refetch()}>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-base font-semibold text-text">적재 현황</h3>
+        <button
+          className="px-3 py-1.5 bg-overlay text-subtext border-none rounded-md text-xs cursor-pointer"
+          onClick={() => refetch()}
+        >
           새로고침
         </button>
       </div>
 
-      <table style={styles.table}>
+      <table className="w-full border-collapse">
         <thead>
           <tr>
-            <th style={styles.th}>월</th>
-            <th style={styles.th}>날짜 수</th>
-            <th style={styles.th}>사이클 수</th>
-            <th style={styles.th}>유효</th>
-            <th style={styles.th}>고진동</th>
+            <th className="px-3 py-2.5 text-left text-xs font-semibold text-subtext uppercase border-b border-overlay">월</th>
+            <th className="px-3 py-2.5 text-left text-xs font-semibold text-subtext uppercase border-b border-overlay">날짜 수</th>
+            <th className="px-3 py-2.5 text-left text-xs font-semibold text-subtext uppercase border-b border-overlay">사이클 수</th>
+            <th className="px-3 py-2.5 text-left text-xs font-semibold text-subtext uppercase border-b border-overlay">유효</th>
+            <th className="px-3 py-2.5 text-left text-xs font-semibold text-subtext uppercase border-b border-overlay">고진동</th>
           </tr>
         </thead>
         <tbody>
           {status.months.map((m) => (
             <tr key={m.month}>
-              <td style={styles.td}>{m.month}</td>
-              <td style={styles.td}>{m.date_count}</td>
-              <td style={styles.td}>{m.total_cycles.toLocaleString()}</td>
-              <td style={styles.td}>{m.valid_cycles.toLocaleString()}</td>
-              <td style={{ ...styles.td, color: m.high_vib_events > 0 ? '#EF4444' : '#a6adc8' }}>
+              <td className="px-3 py-2.5 text-sm text-text border-b border-overlay">{m.month}</td>
+              <td className="px-3 py-2.5 text-sm text-text border-b border-overlay">{m.date_count}</td>
+              <td className="px-3 py-2.5 text-sm text-text border-b border-overlay">{m.total_cycles.toLocaleString()}</td>
+              <td className="px-3 py-2.5 text-sm text-text border-b border-overlay">{m.valid_cycles.toLocaleString()}</td>
+              <td className={`px-3 py-2.5 text-sm border-b border-overlay ${m.high_vib_events > 0 ? 'text-red' : 'text-subtext'}`}>
                 {m.high_vib_events.toLocaleString()}
               </td>
             </tr>
@@ -51,62 +54,9 @@ export default function IngestStatus() {
         </tbody>
       </table>
 
-      <div style={styles.summary}>
+      <div className="mt-3 text-[13px] text-subtext text-right">
         합계: {status.total_dates}일, {status.total_cycles.toLocaleString()} cycles
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    background: '#181825',
-    borderRadius: 12,
-    padding: 24,
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: 600,
-    color: '#cdd6f4',
-  },
-  refreshBtn: {
-    padding: '6px 12px',
-    background: '#313244',
-    color: '#a6adc8',
-    border: 'none',
-    borderRadius: 6,
-    fontSize: 12,
-    cursor: 'pointer',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-  },
-  th: {
-    padding: '10px 12px',
-    textAlign: 'left',
-    fontSize: 12,
-    fontWeight: 600,
-    color: '#a6adc8',
-    textTransform: 'uppercase',
-    borderBottom: '1px solid #313244',
-  },
-  td: {
-    padding: '10px 12px',
-    fontSize: 14,
-    color: '#cdd6f4',
-    borderBottom: '1px solid #313244',
-  },
-  summary: {
-    marginTop: 12,
-    fontSize: 13,
-    color: '#a6adc8',
-    textAlign: 'right',
-  },
-};

@@ -11,7 +11,6 @@ export default function FileUpload() {
   const [result, setResult] = useState<IngestResultType | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    // Filter for PULSE_*.csv and VIB_*.csv
     const validFiles = acceptedFiles.filter((f) => {
       const name = f.name.toUpperCase();
       return name.endsWith('.CSV') && (name.startsWith('PULSE_') || name.startsWith('VIB_'));
@@ -71,36 +70,34 @@ export default function FileUpload() {
       {/* Dropzone */}
       <div
         {...getRootProps()}
-        style={{
-          ...styles.dropzone,
-          ...(isDragActive ? styles.dropzoneActive : {}),
-        }}
+        className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${
+          isDragActive
+            ? 'border-brand bg-brand/10'
+            : 'border-overlay'
+        }`}
       >
         <input {...getInputProps()} />
-        <div style={styles.dropzoneContent}>
-          <p style={{
-            ...styles.dropzoneText,
-            color: isDragActive ? '#89b4fa' : '#6c7086',
-          }}>
+        <div className="flex flex-col items-center gap-2">
+          <p className={`text-[15px] font-medium ${isDragActive ? 'text-blue' : 'text-muted'}`}>
             {isDragActive
               ? 'CSV 파일을 놓으세요'
               : 'CSV 파일을 여기에 드래그하거나 클릭하여 선택'}
           </p>
-          <p style={styles.dropzoneHint}>PULSE_*.csv / VIB_*.csv</p>
+          <p className="text-xs text-muted">PULSE_*.csv / VIB_*.csv</p>
         </div>
       </div>
 
       {/* Selected files */}
       {files.length > 0 && (
-        <div style={styles.fileList}>
-          <div style={styles.fileListHeader}>선택된 파일:</div>
+        <div className="mt-4">
+          <div className="text-[13px] font-semibold text-subtext mb-2">선택된 파일:</div>
           {files.map((file) => (
-            <div key={file.name} style={styles.fileRow}>
-              <span style={styles.fileIcon}>✓</span>
-              <span style={styles.fileName}>{file.name}</span>
-              <span style={styles.fileMeta}>({formatSize(file.size)})</span>
+            <div key={file.name} className="flex items-center gap-2 py-1.5 text-[13px] text-text">
+              <span className="text-green">✓</span>
+              <span className="font-medium">{file.name}</span>
+              <span className="text-muted text-xs">({formatSize(file.size)})</span>
               <button
-                style={styles.removeBtn}
+                className="ml-auto bg-transparent border-none text-muted cursor-pointer text-sm px-1.5"
                 onClick={() => removeFile(file.name)}
               >
                 ✕
@@ -108,15 +105,12 @@ export default function FileUpload() {
             </div>
           ))}
 
-          <div style={styles.summary}>
+          <div className="mt-3 text-[13px] text-subtext">
             {files.length}개 파일 ({formatSize(totalSize)})
           </div>
 
           <button
-            style={{
-              ...styles.uploadBtn,
-              ...(uploading ? styles.disabled : {}),
-            }}
+            className="w-full py-3 mt-3 text-[15px] font-semibold bg-blue text-bg border-none rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleUpload}
             disabled={uploading}
           >
@@ -125,94 +119,7 @@ export default function FileUpload() {
         </div>
       )}
 
-      {/* Result */}
       {result && <IngestResult result={result} />}
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  dropzone: {
-    border: '2px dashed #313244',
-    borderRadius: 12,
-    padding: 40,
-    textAlign: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-  },
-  dropzoneActive: {
-    borderColor: '#2563EB',
-    background: 'rgba(37, 99, 235, 0.1)',
-  },
-  dropzoneContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dropzoneText: {
-    fontSize: 15,
-    fontWeight: 500,
-  },
-  dropzoneHint: {
-    fontSize: 12,
-    color: '#6c7086',
-  },
-  fileList: {
-    marginTop: 16,
-  },
-  fileListHeader: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#a6adc8',
-    marginBottom: 8,
-  },
-  fileRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '6px 0',
-    fontSize: 13,
-    color: '#cdd6f4',
-  },
-  fileIcon: {
-    color: '#0FB880',
-  },
-  fileName: {
-    fontWeight: 500,
-  },
-  fileMeta: {
-    color: '#6c7086',
-    fontSize: 12,
-  },
-  removeBtn: {
-    marginLeft: 'auto',
-    background: 'none',
-    border: 'none',
-    color: '#6c7086',
-    cursor: 'pointer',
-    fontSize: 14,
-    padding: '2px 6px',
-  },
-  summary: {
-    marginTop: 12,
-    fontSize: 13,
-    color: '#a6adc8',
-  },
-  uploadBtn: {
-    width: '100%',
-    padding: '12px',
-    marginTop: 12,
-    fontSize: 15,
-    fontWeight: 600,
-    background: '#89b4fa',
-    color: '#1e1e2e',
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-  },
-  disabled: {
-    opacity: 0.5,
-    cursor: 'not-allowed',
-  },
-};

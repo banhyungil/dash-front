@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { fetchMonths, fetchDevices, fetchDates, exportCycles } from '../api/cycles';
 import type { MonthInfo, DateInfo } from '../api/types';
 
-export default function DateSelector() {
+export default function DateSelectorPage() {
   const navigate = useNavigate();
   const [months, setMonths] = useState<MonthInfo[]>([]);
   const [dates, setDates] = useState<DateInfo[]>([]);
@@ -13,7 +13,6 @@ export default function DateSelector() {
 
   const [testing, setTesting] = useState(false);
 
-  // Load months on mount
   useEffect(() => {
     const loadMonths = async () => {
       try {
@@ -29,13 +28,11 @@ export default function DateSelector() {
     loadMonths();
   }, []);
 
-  // Load dates when month changes
   useEffect(() => {
     if (!selectedMonth) return;
 
     const loadDates = async () => {
       try {
-        // Get first device to fetch dates
         const devices = await fetchDevices(selectedMonth);
         if (devices.length > 0) {
           const data = await fetchDates(selectedMonth, devices[0]);
@@ -54,7 +51,6 @@ export default function DateSelector() {
       alert('Please select month and date');
       return;
     }
-
     navigate(`/charts/${selectedMonth}/${selectedDate}`);
   };
 
@@ -65,7 +61,6 @@ export default function DateSelector() {
     }
 
     setTesting(true);
-
     try {
       const result = await exportCycles(selectedMonth, selectedDate);
       alert(
@@ -80,58 +75,50 @@ export default function DateSelector() {
       console.error('Test export failed:', error);
       alert('Test export failed. Check console for details.');
     }
-
     setTesting(false);
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>Day Viewer</h1>
-        <p style={styles.subtitle}>Select a date to view roll data (Expected filtered)</p>
+    <div className="flex flex-col items-center justify-center min-h-screen p-10 bg-linear-to-br from-bg to-surface">
+      <div className="text-center mb-10">
+        <h1 className="text-5xl font-bold text-blue mb-2 tracking-tight">Day Viewer</h1>
+        <p className="text-base text-subtext">Select a date to view roll data (Expected filtered)</p>
       </div>
 
-      <div style={styles.form}>
+      <div className="bg-overlay rounded-xl p-8 min-w-100 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
         {/* Month selector */}
-        <div style={styles.field}>
-          <label style={styles.label}>Month</label>
+        <div className="mb-5">
+          <label className="block text-[13px] font-semibold text-text mb-2 uppercase tracking-wide">Month</label>
           <select
-            style={styles.select}
+            className="w-full px-3 py-2.5 text-sm bg-bg text-text border border-border rounded-md cursor-pointer outline-none"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
           >
             {months.map((m) => (
-              <option key={m.month} value={m.month}>
-                {m.label}
-              </option>
+              <option key={m.month} value={m.month}>{m.label}</option>
             ))}
           </select>
         </div>
 
         {/* Date selector */}
-        <div style={styles.field}>
-          <label style={styles.label}>Date</label>
+        <div className="mb-5">
+          <label className="block text-[13px] font-semibold text-text mb-2 uppercase tracking-wide">Date</label>
           <select
-            style={styles.select}
+            className="w-full px-3 py-2.5 text-sm bg-bg text-text border border-border rounded-md cursor-pointer outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             disabled={!selectedMonth || dates.length === 0}
           >
             <option value="">-- Select Date --</option>
             {dates.map((d) => (
-              <option key={d.date} value={d.date}>
-                {d.label || d.date}
-              </option>
+              <option key={d.date} value={d.date}>{d.label || d.date}</option>
             ))}
           </select>
         </div>
 
         {/* Load button */}
         <button
-          style={{
-            ...styles.button,
-            ...((!selectedMonth || !selectedDate) ? styles.buttonDisabled : {}),
-          }}
+          className="w-full py-3 px-6 text-[15px] font-semibold bg-blue text-bg border-none rounded-md cursor-pointer mt-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleLoadClick}
           disabled={!selectedMonth || !selectedDate}
         >
@@ -140,10 +127,7 @@ export default function DateSelector() {
 
         {/* Test Export button */}
         <button
-          style={{
-            ...styles.testButton,
-            ...((!selectedMonth || !selectedDate || testing) ? styles.buttonDisabled : {}),
-          }}
+          className="w-full py-2.5 px-6 text-[13px] font-semibold bg-[#a6e3a1] text-bg border-none rounded-md cursor-pointer mt-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleTestExport}
           disabled={!selectedMonth || !selectedDate || testing}
         >
@@ -152,7 +136,7 @@ export default function DateSelector() {
 
         {/* Data Manager button */}
         <button
-          style={styles.managerButton}
+          className="w-full py-2.5 px-6 text-[13px] font-semibold bg-transparent text-blue border border-blue rounded-md cursor-pointer mt-4 transition-all"
           onClick={() => navigate('/manager')}
         >
           데이터 관리
@@ -161,11 +145,11 @@ export default function DateSelector() {
 
       {/* Info panel */}
       {dates.length > 0 && (
-        <div style={styles.info}>
-          <p style={styles.infoText}>
+        <div className="mt-6 p-4 bg-surface rounded-lg min-w-100">
+          <p className="text-[13px] text-subtext mb-1">
             Available dates: <strong>{dates.length}</strong>
           </p>
-          <p style={styles.infoText}>
+          <p className="text-[13px] text-subtext">
             Selected: {selectedMonth} / {selectedDate || '(none)'}
           </p>
         </div>
@@ -173,116 +157,3 @@ export default function DateSelector() {
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
-    padding: 40,
-    background: 'linear-gradient(135deg, #1e1e2e 0%, #181825 100%)',
-  },
-  header: {
-    textAlign: 'center',
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: 700,
-    color: '#89b4fa',
-    marginBottom: 8,
-    letterSpacing: -1,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#a6adc8',
-    fontWeight: 400,
-  },
-  form: {
-    background: '#313244',
-    borderRadius: 12,
-    padding: 32,
-    minWidth: 400,
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-  },
-  field: {
-    marginBottom: 20,
-  },
-  label: {
-    display: 'block',
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#cdd6f4',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  select: {
-    width: '100%',
-    padding: '10px 12px',
-    fontSize: 14,
-    background: '#1e1e2e',
-    color: '#cdd6f4',
-    border: '1px solid #45475a',
-    borderRadius: 6,
-    cursor: 'pointer',
-    outline: 'none',
-  },
-  button: {
-    width: '100%',
-    padding: '12px 24px',
-    fontSize: 15,
-    fontWeight: 600,
-    background: '#89b4fa',
-    color: '#1e1e2e',
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-    marginTop: 12,
-    transition: 'all 0.2s',
-  },
-  testButton: {
-    width: '100%',
-    padding: '10px 24px',
-    fontSize: 13,
-    fontWeight: 600,
-    background: '#a6e3a1',
-    color: '#1e1e2e',
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-    marginTop: 8,
-    transition: 'all 0.2s',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-    cursor: 'not-allowed',
-  },
-  info: {
-    marginTop: 24,
-    padding: 16,
-    background: '#181825',
-    borderRadius: 8,
-    minWidth: 400,
-  },
-  infoText: {
-    fontSize: 13,
-    color: '#a6adc8',
-    marginBottom: 4,
-  },
-  managerButton: {
-    width: '100%',
-    padding: '10px 24px',
-    fontSize: 13,
-    fontWeight: 600,
-    background: 'transparent',
-    color: '#89b4fa',
-    border: '1px solid #89b4fa',
-    borderRadius: 6,
-    cursor: 'pointer',
-    marginTop: 16,
-    transition: 'all 0.2s',
-  },
-};

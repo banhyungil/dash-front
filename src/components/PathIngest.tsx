@@ -25,7 +25,6 @@ export default function PathIngest() {
     try {
       const res = await scanFolder(folder.trim());
       setFiles(res.files);
-      // Auto-select files that aren't already ingested
       const autoSelected = new Set(
         res.files.filter((f) => !f.already_ingested).map((f) => f.path)
       );
@@ -73,9 +72,9 @@ export default function PathIngest() {
   return (
     <div>
       {/* Path input */}
-      <div style={styles.inputRow}>
+      <div className="flex gap-2">
         <input
-          style={styles.input}
+          className="flex-1 px-3 py-2.5 text-sm bg-bg text-text border border-border rounded-md outline-none focus:border-blue"
           type="text"
           placeholder="C:/data/Measured_2601"
           value={folder}
@@ -83,10 +82,7 @@ export default function PathIngest() {
           onKeyDown={(e) => e.key === 'Enter' && handleScan()}
         />
         <button
-          style={{
-            ...styles.scanBtn,
-            ...(scanning ? styles.disabled : {}),
-          }}
+          className="px-5 py-2.5 text-sm font-semibold bg-blue text-bg border-none rounded-md cursor-pointer whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleScan}
           disabled={scanning}
         >
@@ -96,24 +92,21 @@ export default function PathIngest() {
 
       {/* Scan results */}
       {files.length > 0 && (
-        <div style={styles.fileList}>
-          <div style={styles.fileListHeader}>스캔 결과:</div>
+        <div className="mt-4">
+          <div className="text-[13px] font-semibold text-subtext mb-2">스캔 결과:</div>
           {files.map((file) => (
-            <label key={file.path} style={styles.fileRow}>
+            <label key={file.path} className="flex items-center gap-2 py-1.5 cursor-pointer text-[13px]">
               <input
                 type="checkbox"
                 checked={selected.has(file.path)}
                 onChange={() => toggleFile(file.path)}
                 disabled={file.already_ingested}
-                style={styles.checkbox}
+                className="accent-blue"
               />
-              <span style={{
-                ...styles.fileName,
-                color: file.already_ingested ? '#6c7086' : '#cdd6f4',
-              }}>
+              <span className={`font-medium ${file.already_ingested ? 'text-muted' : 'text-text'}`}>
                 {file.filename}
               </span>
-              <span style={styles.fileMeta}>
+              <span className="text-muted text-xs">
                 {file.already_ingested
                   ? '(이미 적재됨)'
                   : `(${file.estimated_cycles} cycles, ${(file.size_bytes / 1024).toFixed(0)} KB)`}
@@ -121,15 +114,12 @@ export default function PathIngest() {
             </label>
           ))}
 
-          <div style={styles.summary}>
+          <div className="mt-3 text-[13px] text-subtext">
             선택: {selectedCount}개 파일 / {selectedCycles} cycles
           </div>
 
           <button
-            style={{
-              ...styles.ingestBtn,
-              ...(selectedCount === 0 || ingesting ? styles.disabled : {}),
-            }}
+            className="w-full py-3 mt-3 text-[15px] font-semibold bg-green text-bg border-none rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleIngest}
             disabled={selectedCount === 0 || ingesting}
           >
@@ -138,84 +128,7 @@ export default function PathIngest() {
         </div>
       )}
 
-      {/* Result */}
       {result && <IngestResult result={result} />}
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  inputRow: {
-    display: 'flex',
-    gap: 8,
-  },
-  input: {
-    flex: 1,
-    padding: '10px 12px',
-    fontSize: 14,
-    background: '#1e1e2e',
-    color: '#cdd6f4',
-    border: '1px solid #45475a',
-    borderRadius: 6,
-    outline: 'none',
-  },
-  scanBtn: {
-    padding: '10px 20px',
-    fontSize: 14,
-    fontWeight: 600,
-    background: '#89b4fa',
-    color: '#1e1e2e',
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  },
-  disabled: {
-    opacity: 0.5,
-    cursor: 'not-allowed',
-  },
-  fileList: {
-    marginTop: 16,
-  },
-  fileListHeader: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#a6adc8',
-    marginBottom: 8,
-  },
-  fileRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '6px 0',
-    cursor: 'pointer',
-    fontSize: 13,
-  },
-  checkbox: {
-    accentColor: '#89b4fa',
-  },
-  fileName: {
-    fontWeight: 500,
-  },
-  fileMeta: {
-    color: '#6c7086',
-    fontSize: 12,
-  },
-  summary: {
-    marginTop: 12,
-    fontSize: 13,
-    color: '#a6adc8',
-  },
-  ingestBtn: {
-    width: '100%',
-    padding: '12px',
-    marginTop: 12,
-    fontSize: 15,
-    fontWeight: 600,
-    background: '#0FB880',
-    color: '#1e1e2e',
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-  },
-};
