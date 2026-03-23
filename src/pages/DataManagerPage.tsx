@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import PathIngest from '../components/PathIngest';
 import FileUpload from '../components/FileUpload';
 import IngestStatus from '../components/IngestStatus';
@@ -7,21 +6,13 @@ import IngestStatus from '../components/IngestStatus';
 type IngestTab = 'path' | 'upload';
 
 export default function DataManagerPage() {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<IngestTab>('path');
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-bg text-text">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 bg-surface border-b border-overlay">
-        <button
-          className="px-4 py-2 bg-overlay text-text border-none rounded-md text-[13px] font-semibold cursor-pointer"
-          onClick={() => navigate('/')}
-        >
-          ← 뒤로
-        </button>
+      <div className="flex items-center px-6 py-4 border-b border-overlay">
         <h1 className="text-xl font-bold text-blue">데이터 관리</h1>
-        <div className="w-20" />
       </div>
 
       <div className="flex-1 overflow-auto p-6 flex flex-col gap-6 max-w-200 mx-auto w-full">
