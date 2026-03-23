@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fetchMonths, fetchDevices, fetchDates, testExport, type MonthInfo, type DateInfo } from '../api/client';
 
-interface DateSelectorProps {
-  onDateSelect: (month: string, date: string) => void;
-}
-
-export default function DateSelector({ onDateSelect }: DateSelectorProps) {
+export default function DateSelector() {
+  const navigate = useNavigate();
   const [months, setMonths] = useState<MonthInfo[]>([]);
   const [dates, setDates] = useState<DateInfo[]>([]);
 
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
 
-  const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
 
   // Load months on mount
@@ -57,7 +54,7 @@ export default function DateSelector({ onDateSelect }: DateSelectorProps) {
       return;
     }
 
-    onDateSelect(selectedMonth, selectedDate);
+    navigate(`/charts/${selectedMonth}/${selectedDate}`);
   };
 
   const handleTestExport = async () => {
@@ -150,6 +147,14 @@ export default function DateSelector({ onDateSelect }: DateSelectorProps) {
           disabled={!selectedMonth || !selectedDate || testing}
         >
           {testing ? 'Exporting...' : 'Test Export (Copy Raw + Create CSV)'}
+        </button>
+
+        {/* Data Manager button */}
+        <button
+          style={styles.managerButton}
+          onClick={() => navigate('/manager')}
+        >
+          데이터 관리
         </button>
       </div>
 
@@ -265,5 +270,18 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 13,
     color: '#a6adc8',
     marginBottom: 4,
+  },
+  managerButton: {
+    width: '100%',
+    padding: '10px 24px',
+    fontSize: 13,
+    fontWeight: 600,
+    background: 'transparent',
+    color: '#89b4fa',
+    border: '1px solid #89b4fa',
+    borderRadius: 6,
+    cursor: 'pointer',
+    marginTop: 16,
+    transition: 'all 0.2s',
   },
 };
