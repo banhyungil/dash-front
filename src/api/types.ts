@@ -102,3 +102,12 @@ export interface IngestStatus {
   total_dates: number;
   total_cycles: number;
 }
+
+export interface IngestJob {
+  job_id: string;
+  status: 'queued' | 'running' | 'done';
+  total_files: number;
+  completed_files: number;
+  success_cycles: number;
+  result: IngestResult | null;
+}

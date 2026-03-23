@@ -1,14 +1,21 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
-import { uploadFiles } from '../api/ingest';
-import type { IngestResult as IngestResultType } from '../api/types';
+import { uploadFiles, getJobStatus } from '../api/ingest';
+import type { IngestResult as IngestResultType, IngestJob } from '../api/types';
 import IngestResult from './IngestResult';
 
 export default function FileUpload() {
   const [files, setFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<IngestResultType | null>(null);
+  const [job, setJob] = useState<IngestJob | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const validFiles = acceptedFiles.filter((f) => {
@@ -27,6 +34,7 @@ export default function FileUpload() {
       return [...prev, ...newFiles];
     });
     setResult(null);
+    setJob(null);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -44,19 +52,37 @@ export default function FileUpload() {
       toast.error('파일을 선택하세요');
       return;
     }
-    setUploading(true);
+    setResult(null);
 
     try {
-      const res = await uploadFiles(files);
-      setResult(res);
+      const jobRes = await uploadFiles(files);
+      setJob(jobRes);
       setFiles([]);
-      toast.success(`${res.success_cycles} cycles 적재 완료`);
+
+      pollingRef.current = setInterval(async () => {
+        try {
+          const status = await getJobStatus(jobRes.job_id);
+          setJob(status);
+
+          if (status.status === 'done') {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+            pollingRef.current = null;
+            if (status.result) {
+              setResult(status.result);
+              toast.success(`${status.result.success_cycles} cycles 적재 완료`);
+            }
+          }
+        } catch {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+      }, 1000);
     } catch (err) {
       toast.error(`업로드 실패: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
     }
-    setUploading(false);
   };
 
+  const isUploading = job !== null && job.status !== 'done';
   const totalSize = files.reduce((sum, f) => sum + f.size, 0);
 
   const formatSize = (bytes: number): string => {
@@ -71,9 +97,7 @@ export default function FileUpload() {
       <div
         {...getRootProps()}
         className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${
-          isDragActive
-            ? 'border-brand bg-brand/10'
-            : 'border-overlay'
+          isDragActive ? 'border-brand bg-brand/10' : 'border-overlay'
         }`}
       >
         <input {...getInputProps()} />
@@ -112,10 +136,26 @@ export default function FileUpload() {
           <button
             className="w-full py-3 mt-3 text-[15px] font-semibold bg-blue text-bg border-none rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleUpload}
-            disabled={uploading}
+            disabled={isUploading}
           >
-            {uploading ? '업로드 중...' : '업로드'}
+            {isUploading ? '업로드 중...' : '업로드'}
           </button>
+        </div>
+      )}
+
+      {/* Progress bar */}
+      {isUploading && job && (
+        <div className="mt-4">
+          <div className="flex justify-between text-xs text-subtext mb-1">
+            <span>적재 중... {job.completed_files}/{job.total_files} 파일</span>
+            <span>{job.success_cycles} cycles</span>
+          </div>
+          <div className="w-full h-2 bg-bg rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue rounded-full transition-all duration-300"
+              style={{ width: `${(job.completed_files / job.total_files) * 100}%` }}
+            />
+          </div>
         </div>
       )}
 
