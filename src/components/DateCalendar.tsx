@@ -3,14 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
 import { fetchMonths, fetchDates } from '../api/cycles';
-import type { MonthInfo } from '../api/types';
+import type { MonthInfo, DateInfo } from '../api/types';
 
 export default function DateCalendar() {
   const navigate = useNavigate();
   const { month: urlMonth, date: urlDate } = useParams<{ month: string; date: string }>();
 
   const [months, setMonths] = useState<MonthInfo[]>([]);
-  const [dates, setDates] = useState<string[]>([]);
+  const [dateInfos, setDateInfos] = useState<DateInfo[]>([]);
   const [displayMonth, setDisplayMonth] = useState<Date | undefined>(undefined);
 
   // 월 목록 로드
@@ -43,20 +43,27 @@ export default function DateCalendar() {
     const exists = months.some((m) => m.month === currentMonthKey);
     if (exists) {
       fetchDates(currentMonthKey)
-        .then((data) => setDates(data.map((d) => d.date)))
+        .then(setDateInfos)
         .catch(console.error);
     } else {
-      setDates([]);
+      setDateInfos([]);
     }
   }, [currentMonthKey, months]);
 
-  // 적재된 날짜를 Date 객체 배열로 변환 (YYMMDD → Date)
+  // YYMMDD → DateInfo 맵 (캘린더 셀에서 빠르게 조회)
+  const dateInfoMap = useMemo(() => {
+    const map = new Map<string, DateInfo>();
+    dateInfos.forEach((d) => map.set(d.date, d));
+    return map;
+  }, [dateInfos]);
+
+  // 적재된 날짜를 Date 객체 배열로 변환
   const ingestedDates = useMemo(
-    () => dates.map(parseYYMMDD),
-    [dates],
+    () => dateInfos.map((d) => parseYYMMDD(d.date)),
+    [dateInfos],
   );
 
-  // 현재 선택된 날짜 (URL의 YYMMDD → Date)
+  // 현재 선택된 날짜
   const selectedDate = useMemo(() => {
     if (!urlDate) return undefined;
     return parseYYMMDD(urlDate);
@@ -91,6 +98,35 @@ export default function DateCalendar() {
         selected={selectedDate}
         onSelect={handleSelect}
         disabled={(day) => !ingestedDates.some((d) => isSameDay(d, day))}
+        components={{
+          DayButton: ({ day, ...props }) => {
+            const info = dateInfoMap.get(toYYMMDD(day.date));
+            return (
+              <button
+                {...props}
+                style={{ ...props.style, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}
+                title={info ? `사이클: ${info.cycle_count}건${info.high_vib_events > 0 ? `\n고진동: ${info.high_vib_events}건` : ''}` : undefined}
+              >
+                <span className="text-sm leading-none">{day.date.getDate()}</span>
+                {info && (
+                  <>
+                    <span className="text-[11px] leading-none mt-0.5 text-subtext">
+                      {info.cycle_count}
+                    </span>
+                    {info.high_vib_events > 0 && (
+                      <span className="text-[11px] leading-none text-red">
+                        ⚠{info.high_vib_events}
+                      </span>
+                    )}
+                  </>
+                )}
+              </button>
+            );
+          },
+        }}
+        styles={{
+          day: { width: '48px', height: '52px' },
+        }}
       />
     </div>
   );

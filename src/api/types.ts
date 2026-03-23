@@ -8,6 +8,8 @@ export interface MonthInfo {
 export interface DateInfo {
   date: string;
   label: string;
+  cycle_count: number;
+  high_vib_events: number;
 }
 
 export interface CycleData {
