@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { scanFolder, ingestFiles, getJobStatus } from '../api/ingest';
 import type { ScanFile, IngestResult as IngestResultType, IngestJob } from '../api/types';
 import IngestResult from './IngestResult';
 
 export default function PathIngest() {
+  const queryClient = useQueryClient();
   const [folder, setFolder] = useState('');
   const [scanning, setScanning] = useState(false);
   const [files, setFiles] = useState<ScanFile[]>([]);
@@ -78,10 +80,16 @@ export default function PathIngest() {
           if (status.status === 'done') {
             if (pollingRef.current) clearInterval(pollingRef.current);
             pollingRef.current = null;
+            queryClient.invalidateQueries({ queryKey: ['ingest-status'] });
             if (status.result) {
               setResult(status.result);
               toast.success(`${status.result.success_cycles} cycles 적재 완료`);
             }
+            // 적재 완료된 파일을 already_ingested로 갱신
+            setFiles(prev => prev.map(f =>
+              selected.has(f.path) ? { ...f, already_ingested: true } : f
+            ));
+            setSelected(new Set());
           }
         } catch {
           if (pollingRef.current) clearInterval(pollingRef.current);
@@ -123,7 +131,26 @@ export default function PathIngest() {
       {/* Scan results */}
       {files.length > 0 && (
         <div className="mt-4">
-          <div className="text-[13px] font-semibold text-subtext mb-2">스캔 결과:</div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[13px] font-semibold text-subtext">스캔 결과:</span>
+            <label className="flex items-center gap-1.5 cursor-pointer text-[12px] text-subtext">
+              <input
+                type="checkbox"
+                checked={files.filter(f => !f.already_ingested).every(f => selected.has(f.path))}
+                onChange={() => {
+                  const selectable = files.filter(f => !f.already_ingested);
+                  const allSelected = selectable.every(f => selected.has(f.path));
+                  if (allSelected) {
+                    setSelected(new Set());
+                  } else {
+                    setSelected(new Set(selectable.map(f => f.path)));
+                  }
+                }}
+                className="accent-blue"
+              />
+              전체 선택
+            </label>
+          </div>
           <div className="max-h-60 overflow-y-auto">
             {files.map((file) => (
               <label key={file.path} className="flex items-center gap-2 py-1.5 cursor-pointer text-[13px]">

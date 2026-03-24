@@ -31,6 +31,16 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
   const [sensor, setSensor] = useState<Sensor>('VIB');
   const [axis, setAxis] = useState<Axis>('X');
+  const [visibleSessions, setVisibleSessions] = useState<Set<string>>(new Set(['R1', 'R2', 'R3', 'R4']));
+
+  const toggleSession = (session: string) => {
+    setVisibleSessions(prev => {
+      const next = new Set(prev);
+      if (next.has(session)) next.delete(session);
+      else next.add(session);
+      return next;
+    });
+  };
 
   const onRelayout = useCallback((e: any) => {
     if (e['xaxis.range[0]'] != null) setXRange([e['xaxis.range[0]'], e['xaxis.range[1]']]);
@@ -54,6 +64,7 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
   // Panel 1: Box Plot (Q1/Median/Q3 bands)
   const p1Traces: any[] = [];
   ['R1', 'R2', 'R3', 'R4'].forEach(s => {
+    if (!visibleSessions.has(s)) return;
     const pts = sortedCycles.filter(c => c.session === s);
     if (!pts.length) return;
 
@@ -89,6 +100,7 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
   // Panel 2: RMS / Peak trend
   const p2Traces: any[] = [];
   ['R1', 'R2', 'R3', 'R4'].forEach(s => {
+    if (!visibleSessions.has(s)) return;
     const pts = sortedCycles.filter(c => c.session === s);
     if (!pts.length) return;
 
@@ -117,6 +129,7 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
   // Panel 3: Burst / Impact event counts
   const p3Traces: any[] = [];
   ['R1', 'R2', 'R3', 'R4'].forEach(s => {
+    if (!visibleSessions.has(s)) return;
     const pts = sortedCycles.filter(c => c.session === s);
     if (!pts.length) return;
 
@@ -162,14 +175,21 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
               className={`px-2 py-0.5 rounded text-[11px] font-semibold border-none cursor-pointer ${effectiveAxis === a ? 'bg-brand text-white' : 'bg-overlay text-subtext'}`}
             >{a}</button>
           ))}
-          <div className="flex gap-2 ml-2">
-            {Object.entries(DEVICE_COLORS).map(([d, c]) => (
-              <div key={d} className="flex items-center gap-1">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />
-                <span className="text-[11px] text-subtext">{d}</span>
-              </div>
-            ))}
-          </div>
+          <span className="text-muted">|</span>
+          {Object.entries(DEVICE_COLORS).map(([d, c]) => (
+            <button
+              key={d}
+              onClick={() => toggleSession(d)}
+              className="px-2 py-0.5 border-none rounded text-[11px] font-semibold cursor-pointer transition-opacity"
+              style={{
+                background: visibleSessions.has(d) ? c : '#313244',
+                opacity: visibleSessions.has(d) ? 1 : 0.4,
+                color: '#cdd6f4',
+              }}
+            >
+              {d}
+            </button>
+          ))}
         </div>
       </div>
 

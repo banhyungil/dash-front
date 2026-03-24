@@ -259,7 +259,7 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
 
   if (cycles.length === 0) {
     return (
-      <div style={styles.empty}>
+      <div className="flex items-center justify-center h-full text-muted text-sm">
         <p>No vibration data available</p>
       </div>
     );
@@ -378,33 +378,27 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
   const totalHighVibEvents = plotData.highVibEvents.length;
 
   return (
-    <div style={styles.container}>
-      <div style={styles.controls}>
+    <div className="w-full h-full flex flex-col relative">
+      <div className="flex items-center  gap-2 px-2.5 py-2">
         <button
           onClick={() => setColorBySensor(!colorBySensor)}
-          style={{
-            ...styles.toggleButton,
-            backgroundColor: colorBySensor ? '#2563EB' : '#475569', // Brand Blue / Body Text
-          }}
+          className="px-3 py-1.5 border-none rounded text-[12px] font-medium cursor-pointer transition-all text-text"
+          style={{ backgroundColor: colorBySensor ? '#2563EB' : '#475569' }}
         >
           {colorBySensor ? '센서별 색상' : '단일 색상'}
         </button>
         {totalHighVibEvents > 0 && (
-          <div style={{
-            ...styles.toggleButton,
-            backgroundColor: '#EF4444',
-            cursor: 'default',
-            fontWeight: 600
-          }}>
+          <div className="px-3 py-1.5 rounded text-[12px] font-semibold text-text bg-red">
             ⚠️ 고진동 이벤트: {totalHighVibEvents.toLocaleString()}건
           </div>
         )}
       </div>
+      <div className="flex-1 min-h-0">
       <Plot
         data={traces}
         layout={{
           autosize: true,
-          margin: { l: 60, r: 40, t: 40, b: 60 },
+          margin: { l: 60, r: 40, t: 10, b: 60 },
           paper_bgcolor: '#1e1e2e',
           plot_bgcolor: '#181825',
           font: { color: '#cdd6f4', family: 'Segoe UI, Noto Sans KR, sans-serif' },
@@ -509,43 +503,8 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
         useResizeHandler
         onRelayout={handleRelayout}
       />
+      </div>
     </div>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'relative',
-  },
-  controls: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    zIndex: 1000,
-    display: 'flex',
-    gap: 8,
-  },
-  toggleButton: {
-    padding: '6px 12px',
-    border: 'none',
-    borderRadius: 4,
-    color: '#cdd6f4',
-    fontSize: 12,
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    fontFamily: 'Segoe UI, Noto Sans KR, sans-serif',
-  },
-  empty: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    color: '#6c7086',
-    fontSize: 14,
-  },
-};

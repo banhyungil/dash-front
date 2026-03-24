@@ -27,11 +27,17 @@ interface RunPoint {
   elapsedHours: number;
 }
 
+/** ISO 타임스탬프를 자정 기준 소수점 시(hour) 단위로 변환. 예: "2026-03-24T14:30:00" → 14.5 */
 function getHours(ts: string): number {
   const d = new Date(ts);
   return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
 }
 
+/**
+ * 사이클 배열을 세션별로 그룹화하여 3개 패널에 필요한 데이터를 생성한다.
+ * - segments: 15분 갭 기준 병합된 연속 가동 구간 (Panel 1 Gantt, Panel 2 MPM Step)
+ * - runPoints: 연속 운전 경과시간 좌표 (Panel 3 면적 차트)
+ */
 function processData(cycles: CycleData[]) {
   if (!cycles.length) return { segments: [] as Segment[], runPoints: [] as RunPoint[], xMin: 6, xMax: 20 };
 
@@ -41,31 +47,38 @@ function processData(cycles: CycleData[]) {
   const segments: Segment[] = [];
   const runPoints: RunPoint[] = [];
 
+  // 세션(R1~R4)별로 시간순 정렬 후, 15분 갭 기준으로 연속 가동 구간(segment)을 병합한다.
+  // segment: Gantt 바 + MPM Step 차트에 사용
+  // runPoints: 연속 운전시간 면적 차트에 사용 (갭 발생 시 0으로 리셋)
   Object.entries(groups).forEach(([session, list]) => {
     const sorted = [...list].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     let cur: Segment | null = null;
-    let runStart = 0;
+    let runStart = 0; // 현재 연속 구간의 시작 시각 (시 단위)
 
     sorted.forEach((c, i) => {
       const t = getHours(c.timestamp);
       const dur = c.duration_ms / 3600000;
       const end = t + dur;
+      // 이전 구간과 15분 이상 떨어지면 새 segment 시작
       const isNew = !cur || (t - cur.endTime) > MERGE_GAP_MINUTES / 60;
 
       if (isNew) {
         if (cur) segments.push(cur);
         cur = { session, startTime: t, endTime: end, durationHours: dur, cycleCount: 1, avgMpm: c.mpm_mean };
         runStart = t;
-      } else {
+      } else if(cur) {
+        // 기존 segment에 병합: 종료시각 확장, 이동평균 갱신
         cur.endTime = end;
         cur.durationHours = cur.endTime - cur.startTime;
         cur.cycleCount++;
         cur.avgMpm = (cur.avgMpm * (cur.cycleCount - 1) + c.mpm_mean) / cur.cycleCount;
       }
 
+      // 연속 운전시간 차트용: 사이클 시작/끝의 경과시간 기록
       runPoints.push({ time: t, session, elapsedHours: t - runStart });
       runPoints.push({ time: end, session, elapsedHours: t - runStart + dur });
 
+      // 다음 사이클과 15분 이상 갭 → 연속 운전시간 0으로 리셋
       if (i < sorted.length - 1) {
         const nextT = getHours(sorted[i + 1].timestamp);
         if (nextT - end > MERGE_GAP_MINUTES / 60) {
@@ -89,10 +102,28 @@ const DARK = {
   paper: '#1e1e2e', plot: '#181825', font: '#cdd6f4', grid: '#313244', sub: '#a6adc8',
 };
 
+/**
+ * RPM 3패널 차트 컴포넌트.
+ * - Panel 1: Gantt — 세션별 가동 구간 막대
+ * - Panel 2: MPM Step — 사이클별 MPM 계단 차트 + target RPM 기준선
+ * - Panel 3: Continuous Run — 연속 운전시간 면적 차트 (15분 갭 시 리셋)
+ */
 export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProps) {
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
+  const [visibleSessions, setVisibleSessions] = useState<Set<string>>(new Set(['R1', 'R2', 'R3', 'R4']));
   const data = useMemo(() => processData(cycles), [cycles]);
 
+  /** 디바이스 표시/숨기기 토글 */
+  const toggleSession = (session: string) => {
+    setVisibleSessions(prev => {
+      const next = new Set(prev);
+      if (next.has(session)) next.delete(session);
+      else next.add(session);
+      return next;
+    });
+  };
+
+  /** Plotly 줌/팬 이벤트 시 X축 범위를 동기화 */
   const onRelayout = useCallback((e: any) => {
     if (e['xaxis.range[0]'] != null) setXRange([e['xaxis.range[0]'], e['xaxis.range[1]']]);
   }, []);
@@ -103,7 +134,7 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
   const p1Shapes: any[] = [];
   const p1Traces: any[] = [];
   ['R1', 'R2', 'R3', 'R4'].forEach((s, idx) => {
-    const segs = data.segments.filter(seg => seg.session === s);
+    const segs = data.segments.filter(seg => seg.session === s && visibleSessions.has(s));
     const y = 3 - idx;
     segs.forEach(seg => {
       p1Shapes.push({
@@ -129,6 +160,7 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
   // Panel 2: MPM step
   const p2Traces: any[] = [];
   ['R1', 'R2', 'R3', 'R4'].forEach(s => {
+    if (!visibleSessions.has(s)) return;
     const segs = data.segments.filter(seg => seg.session === s);
     const sCycles = cycles.filter(c => c.session === s).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     segs.forEach(seg => {
@@ -153,6 +185,7 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
   // Panel 3: Continuous run
   const p3Traces: any[] = [];
   ['R1', 'R2', 'R3', 'R4'].forEach(s => {
+    if (!visibleSessions.has(s)) return;
     const pts = data.runPoints.filter(p => p.session === s);
     if (!pts.length) return;
     p3Traces.push({
@@ -165,6 +198,7 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
     });
   });
 
+  /** 3개 패널 공통 Plotly 레이아웃. xRange 동기화, 다크테마 적용. */
   const baseLayout = (yTitle: string, extra: any = {}) => ({
     autosize: true,
     margin: { l: 55, r: 15, t: 5, b: 5 },
@@ -179,15 +213,25 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
 
   return (
     <div className="flex flex-col h-full gap-1 p-2">
-      {/* Legend */}
+      {/* Legend (toggleable) */}
       <div className="flex items-center justify-between px-2">
         <span className="text-xs font-semibold text-text">MPM 타임라인 분석</span>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           {Object.entries(DEVICE_COLORS).map(([d, c]) => (
-            <div key={d} className="flex items-center gap-1">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />
-              <span className="text-[11px] text-subtext">{d}</span>
-            </div>
+            <button
+              key={d}
+              onClick={() => toggleSession(d)}
+              className="flex items-center gap-1 px-2 py-0.5 border-none rounded cursor-pointer transition-opacity"
+              style={{
+                background: visibleSessions.has(d) ? c : '#313244',
+                opacity: visibleSessions.has(d) ? 1 : 0.4,
+                color: '#cdd6f4',
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
+              {d}
+            </button>
           ))}
         </div>
       </div>

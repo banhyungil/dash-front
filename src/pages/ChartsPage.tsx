@@ -8,6 +8,7 @@ import RpmChart from '../components/RpmChart';
 import VibrationChart from '../components/VibrationChart';
 import RpmChart3Panel from '../components/RpmChart3Panel';
 import VibrationChart3Panel from '../components/VibrationChart3Panel';
+import CycleDetailModal from '../components/CycleDetailModal';
 
 type Tab = 'rpm' | 'rpm3' | 'vibration' | 'vib3';
 
@@ -15,6 +16,7 @@ export default function ChartsPage() {
   const { month, date } = useDateStore();
   const [activeTab, setActiveTab] = useState<Tab>('rpm');
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [selectedCycle, setSelectedCycle] = useState<{ session: string; cycleIndex: number } | null>(null);
 
   const hasDate = !!month && !!date;
 
@@ -135,7 +137,7 @@ export default function ChartsPage() {
           {/* 차트 */}
           <div className="flex-1 p-4 overflow-hidden">
             {activeTab === 'rpm' && (
-              <RpmChart cycles={dailyData.cycles} targetRpm={dailyData.settings.target_rpm} />
+              <RpmChart cycles={dailyData.cycles} targetRpm={dailyData.settings.target_rpm} onCycleClick={(session, cycleIndex) => setSelectedCycle({ session, cycleIndex })} />
             )}
             {activeTab === 'rpm3' && (
               <RpmChart3Panel cycles={dailyData.cycles} targetRpm={dailyData.settings.target_rpm} />
@@ -155,6 +157,14 @@ export default function ChartsPage() {
             </span>
           </div>
         </>
+      )}
+      {selectedCycle && date && (
+        <CycleDetailModal
+          date={date}
+          session={selectedCycle.session}
+          cycleIndex={selectedCycle.cycleIndex}
+          onClose={() => setSelectedCycle(null)}
+        />
       )}
     </div>
   );

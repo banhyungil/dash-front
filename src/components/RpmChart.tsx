@@ -5,10 +5,21 @@ import type { CycleData } from '../api/types';
 interface RpmChartProps {
   cycles: CycleData[];
   targetRpm: number;
+  onCycleClick?: (session: string, cycleIndex: number) => void;
 }
 
-export default function RpmChart({ cycles }: RpmChartProps) {
-  const [colorByDevice, setColorByDevice] = useState(false); // Default to single color
+export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
+  const [colorByDevice, setColorByDevice] = useState(false);
+  const [visibleSessions, setVisibleSessions] = useState<Set<string>>(new Set(['R1', 'R2', 'R3', 'R4']));
+
+  const toggleSession = (session: string) => {
+    setVisibleSessions(prev => {
+      const next = new Set(prev);
+      if (next.has(session)) next.delete(session);
+      else next.add(session);
+      return next;
+    });
+  };
   const plotData = useMemo(() => {
     if (cycles.length === 0) {
       return {};
@@ -53,7 +64,7 @@ export default function RpmChart({ cycles }: RpmChartProps) {
     };
 
     // Group by session
-    const sessionData: Record<string, { x: number[]; y: number[]; text: string[] }> = {};
+    const sessionData: Record<string, { x: number[]; y: number[]; text: string[]; cycleIndices: number[] }> = {};
 
     // Store cycle rectangles for rendering
     const cycleRects: Array<{
@@ -73,7 +84,7 @@ export default function RpmChart({ cycles }: RpmChartProps) {
     cycles.forEach((cycle) => {
       const session = cycle.session;
       if (!sessionData[session]) {
-        sessionData[session] = { x: [], y: [], text: [] };
+        sessionData[session] = { x: [], y: [], text: [], cycleIndices: [] };
       }
 
       const avgMpm = Math.round(cycle.mpm_mean); // Round to integer
@@ -95,6 +106,7 @@ export default function RpmChart({ cycles }: RpmChartProps) {
       // Store for legacy point display (for hover)
       sessionData[session].x.push(cycleStartHours);
       sessionData[session].y.push(avgMpm);
+      sessionData[session].cycleIndices.push(cycle.cycle_index);
       sessionData[session].text.push(
         `Time: ${timeStr}<br>` +
         `Duration: ${durationSeconds.toFixed(1)}s<br>` +
@@ -166,18 +178,23 @@ export default function RpmChart({ cycles }: RpmChartProps) {
     );
   }
 
-  // Create invisible scatter trace for hover (at center of each bar)
-  const allPoints: Array<{ x: number; y: number; text: string; session: string }> = [];
+  // Create invisible scatter trace for hover (at center of each bar), filtered by visible sessions
+  const allPoints: Array<{ x: number; y: number; text: string; session: string; cycleIndex: number }> = [];
   Object.entries(plotData.sessionData || {}).forEach(([session, data]) => {
+    if (!visibleSessions.has(session)) return;
     data.x.forEach((x, i) => {
       allPoints.push({
         x,
         y: data.y[i],
         text: data.text[i],
         session,
+        cycleIndex: data.cycleIndices[i],
       });
     });
   });
+
+  // Filter cycle rects by visible sessions
+  const filteredRects = (plotData.cycleRects || []).filter(r => visibleSessions.has(r.session));
 
   // Create hover trace (invisible markers for hover info)
   const hoverTrace = {
@@ -211,11 +228,26 @@ export default function RpmChart({ cycles }: RpmChartProps) {
           onClick={() => setColorByDevice(!colorByDevice)}
           style={{
             ...styles.toggleButton,
-            backgroundColor: colorByDevice ? '#2563EB' : '#475569', // Brand Blue / Body Text
+            backgroundColor: colorByDevice ? '#2563EB' : '#475569',
           }}
         >
           {colorByDevice ? 'Device별 색상' : '단일 색상'}
         </button>
+        {(['R1', 'R2', 'R3', 'R4'] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => toggleSession(s)}
+            style={{
+              ...styles.toggleButton,
+              backgroundColor: visibleSessions.has(s)
+                ? (plotData.deviceColors?.[s] ?? '#475569')
+                : '#313244',
+              opacity: visibleSessions.has(s) ? 1 : 0.4,
+            }}
+          >
+            {s}
+          </button>
+        ))}
       </div>
       <Plot
         data={traces}
@@ -260,7 +292,7 @@ export default function RpmChart({ cycles }: RpmChartProps) {
               line: { width: 0 },
             })),
             // Cycle rectangles (horizontal bars)
-            ...(plotData.cycleRects || []).map(rect => ({
+            ...filteredRects.map(rect => ({
               type: 'rect' as const,
               xref: 'x' as const,
               yref: 'y' as const,
@@ -342,6 +374,15 @@ export default function RpmChart({ cycles }: RpmChartProps) {
         }}
         style={{ width: '100%', height: '100%' }}
         useResizeHandler
+        onClick={(event: any) => {
+          if (onCycleClick && event.points?.[0]) {
+            const idx = event.points[0].pointIndex;
+            const point = allPoints[idx];
+            if (point) {
+              onCycleClick(point.session, point.cycleIndex);
+            }
+          }
+        }}
       />
     </div>
   );
@@ -358,7 +399,7 @@ const styles: Record<string, React.CSSProperties> = {
   controls: {
     position: 'absolute',
     top: 10,
-    right: 10,
+    left: 10,
     zIndex: 1000,
     display: 'flex',
     gap: 8,
