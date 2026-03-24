@@ -35,7 +35,6 @@ export default function IngestStatus() {
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-subtext uppercase border-b border-overlay">월</th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-subtext uppercase border-b border-overlay">날짜 수</th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-subtext uppercase border-b border-overlay">사이클 수</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-subtext uppercase border-b border-overlay">유효</th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-subtext uppercase border-b border-overlay">고진동</th>
           </tr>
         </thead>
@@ -45,7 +44,6 @@ export default function IngestStatus() {
               <td className="px-3 py-2.5 text-sm text-text border-b border-overlay">{m.month}</td>
               <td className="px-3 py-2.5 text-sm text-text border-b border-overlay">{m.date_count}</td>
               <td className="px-3 py-2.5 text-sm text-text border-b border-overlay">{m.total_cycles.toLocaleString()}</td>
-              <td className="px-3 py-2.5 text-sm text-text border-b border-overlay">{m.valid_cycles.toLocaleString()}</td>
               <td className={`px-3 py-2.5 text-sm border-b border-overlay ${m.high_vib_events > 0 ? 'text-red' : 'text-subtext'}`}>
                 {m.high_vib_events.toLocaleString()}
               </td>

@@ -115,7 +115,6 @@ export interface IngestStatusMonth {
   month: string;
   date_count: number;
   total_cycles: number;
-  valid_cycles: number;
   high_vib_events: number;
 }
 
