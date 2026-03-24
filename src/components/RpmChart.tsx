@@ -172,7 +172,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
 
   if (cycles.length === 0) {
     return (
-      <div style={styles.empty}>
+      <div className="flex items-center justify-center h-full text-muted text-sm">
         <p>No data available</p>
       </div>
     );
@@ -222,14 +222,12 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
   const yMax = maxMpm + yMargin;
 
   return (
-    <div style={styles.container}>
-      <div style={styles.controls}>
+    <div className="w-full h-full flex flex-col relative">
+      <div className="flex items-center gap-2 px-2.5 py-2">
         <button
           onClick={() => setColorByDevice(!colorByDevice)}
-          style={{
-            ...styles.toggleButton,
-            backgroundColor: colorByDevice ? '#2563EB' : '#475569',
-          }}
+          className="px-3 py-1.5 border-none rounded text-[12px] font-medium cursor-pointer transition-all text-text"
+          style={{ backgroundColor: colorByDevice ? '#2563EB' : '#475569' }}
         >
           {colorByDevice ? 'Device별 색상' : '단일 색상'}
         </button>
@@ -237,8 +235,8 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
           <button
             key={s}
             onClick={() => toggleSession(s)}
+            className="px-3 py-1.5 border-none rounded text-[12px] font-medium cursor-pointer transition-opacity text-text"
             style={{
-              ...styles.toggleButton,
               backgroundColor: visibleSessions.has(s)
                 ? (plotData.deviceColors?.[s] ?? '#475569')
                 : '#313244',
@@ -249,6 +247,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
           </button>
         ))}
       </div>
+      <div className="flex-1 min-h-0">
       <Plot
         data={traces}
         layout={{
@@ -384,43 +383,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
           }
         }}
       />
+      </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'relative',
-  },
-  controls: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    zIndex: 1000,
-    display: 'flex',
-    gap: 8,
-  },
-  toggleButton: {
-    padding: '6px 12px',
-    border: 'none',
-    borderRadius: 4,
-    color: '#cdd6f4',
-    fontSize: 12,
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    fontFamily: 'Segoe UI, Noto Sans KR, sans-serif',
-  },
-  empty: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    color: '#6c7086',
-    fontSize: 14,
-  },
-};
