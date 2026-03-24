@@ -27,22 +27,17 @@ const KpiCards: React.FC<KpiCardsProps> = ({ cycles }) => {
   // 가동 롤러 수 (고유 session 수)
   const activeSessions = new Set(cycles.map(cycle => cycle.session)).size;
 
-  // 진동 이벤트 계산 (0.3g 이상)
-  const vibrationEvents = cycles.reduce((count, cycle) => {
-    // Pulse accelerometer 체크
-    const pulseHighVib = [
-      ...cycle.pulse_accel_x,
-      ...cycle.pulse_accel_y,
-      ...cycle.pulse_accel_z
-    ].some(val => Math.abs(val) > 0.3);
+  // 진동 이벤트 계산 (stats 기반 — burst/peak impact 구분)
+  const burstCount = cycles.reduce((sum, c) => {
+    return sum
+      + (c.stats_pulse_x?.burst_count ?? 0) + (c.stats_pulse_y?.burst_count ?? 0) + (c.stats_pulse_z?.burst_count ?? 0)
+      + (c.stats_vib_x?.burst_count ?? 0) + (c.stats_vib_z?.burst_count ?? 0);
+  }, 0);
 
-    // VIB accelerometer 체크
-    const vibHighVib = [
-      ...cycle.vib_accel_x,
-      ...cycle.vib_accel_z
-    ].some(val => Math.abs(val) > 0.3);
-
-    return count + (pulseHighVib || vibHighVib ? 1 : 0);
+  const peakImpactCount = cycles.reduce((sum, c) => {
+    return sum
+      + (c.stats_pulse_x?.peak_impact_count ?? 0) + (c.stats_pulse_y?.peak_impact_count ?? 0) + (c.stats_pulse_z?.peak_impact_count ?? 0)
+      + (c.stats_vib_x?.peak_impact_count ?? 0) + (c.stats_vib_z?.peak_impact_count ?? 0);
   }, 0);
 
   const cards = [
@@ -52,7 +47,8 @@ const KpiCards: React.FC<KpiCardsProps> = ({ cycles }) => {
     { label: '평균 RPM', value: `${avgRpm.toFixed(1)}`, colorClass: 'text-green' },
     { label: '평균 MPM', value: `${avgMpm.toFixed(1)} m/m`, colorClass: 'text-green' },
     { label: '최고 MPM', value: `${maxMpm.toFixed(1)} m/m`, colorClass: 'text-orange' },
-    { label: '진동 이벤트', value: `${vibrationEvents}건`, colorClass: vibrationEvents > 0 ? 'text-red' : 'text-muted' },
+    { label: 'Burst', value: `${burstCount}`, colorClass: burstCount > 0 ? 'text-red' : 'text-muted' },
+    { label: 'Impact', value: `${peakImpactCount}`, colorClass: peakImpactCount > 0 ? 'text-orange' : 'text-muted' },
   ];
 
   return (

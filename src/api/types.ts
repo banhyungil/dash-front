@@ -12,6 +12,21 @@ export interface DateInfo {
   high_vib_events: number;
 }
 
+export interface AxisStats {
+  rms: number;
+  peak: number;
+  min: number;
+  max: number;
+  q1: number;
+  median: number;
+  q3: number;
+  exceed_count: number;
+  exceed_ratio: number;
+  exceed_duration_ms: number;
+  burst_count: number;
+  peak_impact_count: number;
+}
+
 export interface CycleData {
   timestamp: string;
   session: string;
@@ -36,6 +51,11 @@ export interface CycleData {
   pulse_accel_z: number[];
   vib_accel_x: number[];
   vib_accel_z: number[];
+  stats_pulse_x?: AxisStats;
+  stats_pulse_y?: AxisStats;
+  stats_pulse_z?: AxisStats;
+  stats_vib_x?: AxisStats;
+  stats_vib_z?: AxisStats;
 }
 
 export interface DailyDataResponse {

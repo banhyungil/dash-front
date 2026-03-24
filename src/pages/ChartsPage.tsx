@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchDailyCycles } from '../api/cycles';
+import { fetchDailyCycles, downloadExcel } from '../api/cycles';
 import { useDateStore } from '../stores/useDateStore';
 import DateCalendar from '../components/DateCalendar';
 import KpiCards from '../components/KpiCards';
@@ -50,6 +50,22 @@ export default function ChartsPage() {
             <span className="text-xs text-subtext">
               {dailyData.device} | {dailyData.total_cycles} cycles
             </span>
+          )}
+          {hasDate && dailyData && (
+            <button
+              className="ml-auto px-3 py-1.5 bg-overlay text-subtext border-none rounded-md text-[12px] font-semibold cursor-pointer hover:text-text transition-colors"
+              onClick={async () => {
+                const blob = await downloadExcel(month!, date!);
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Report_${date}.xlsx`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              📥 Excel
+            </button>
           )}
         </div>
 
