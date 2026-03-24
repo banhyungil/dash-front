@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
+import { DEVICE_COLORS, DARK } from '../constants/colors';
 
 interface RpmChart3PanelProps {
   cycles: CycleData[];
@@ -8,9 +9,6 @@ interface RpmChart3PanelProps {
 }
 
 const MERGE_GAP_MINUTES = 15;
-const DEVICE_COLORS: Record<string, string> = {
-  R1: '#2563EB', R2: '#60A5FA', R3: '#10B981', R4: '#F59E0B',
-};
 
 interface Segment {
   session: string;
@@ -98,9 +96,6 @@ function processData(cycles: CycleData[]) {
   };
 }
 
-const DARK = {
-  paper: '#1e1e2e', plot: '#181825', font: '#cdd6f4', grid: '#313244', sub: '#a6adc8',
-};
 
 /**
  * RPM 3패널 차트 컴포넌트.

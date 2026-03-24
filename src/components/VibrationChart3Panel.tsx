@@ -1,18 +1,11 @@
 import { useMemo, useState, useCallback } from 'react';
 import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
+import { DEVICE_COLORS, DARK } from '../constants/colors';
 
 interface VibrationChart3PanelProps {
   cycles: CycleData[];
 }
-
-const DEVICE_COLORS: Record<string, string> = {
-  R1: '#2563EB', R2: '#60A5FA', R3: '#10B981', R4: '#F59E0B',
-};
-
-const DARK = {
-  paper: '#1e1e2e', plot: '#181825', font: '#cdd6f4', grid: '#313244', sub: '#a6adc8',
-};
 
 function getHours(ts: string): number {
   const d = new Date(ts);

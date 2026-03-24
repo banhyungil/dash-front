@@ -115,7 +115,7 @@ export default function ChartsPage() {
           </div>
 
           {/* 차트 탭 */}
-          <div className="flex gap-2 px-4 pt-3">
+          <div className="flex px-4 pt-3 border-b border-overlay">
             {([
               { key: 'rpm', label: 'RPM' },
               { key: 'rpm3', label: 'RPM 3Panel' },
@@ -124,8 +124,10 @@ export default function ChartsPage() {
             ] as { key: Tab; label: string }[]).map(tab => (
               <button
                 key={tab.key}
-                className={`px-4 py-2 border-none rounded-md text-[13px] font-semibold cursor-pointer transition-all ${
-                  activeTab === tab.key ? 'bg-brand text-white' : 'bg-overlay text-subtext'
+                className={`px-4 py-2 border-none bg-transparent text-[13px] font-semibold cursor-pointer transition-all -mb-px ${
+                  activeTab === tab.key
+                    ? 'text-brand border-b-2 border-brand'
+                    : 'text-subtext hover:text-text'
                 }`}
                 onClick={() => setActiveTab(tab.key)}
               >
@@ -134,20 +136,20 @@ export default function ChartsPage() {
             ))}
           </div>
 
-          {/* 차트 */}
-          <div className="flex-1 p-4 overflow-hidden">
-            {activeTab === 'rpm' && (
+          {/* 차트 — display 토글로 언마운트 방지 */}
+          <div className="flex-1 p-4 overflow-hidden relative">
+            <div style={{ display: activeTab === 'rpm' ? 'contents' : 'none' }}>
               <RpmChart cycles={dailyData.cycles} targetRpm={dailyData.settings.target_rpm} onCycleClick={(session, cycleIndex) => setSelectedCycle({ session, cycleIndex })} />
-            )}
-            {activeTab === 'rpm3' && (
+            </div>
+            <div style={{ display: activeTab === 'rpm3' ? 'contents' : 'none' }}>
               <RpmChart3Panel cycles={dailyData.cycles} targetRpm={dailyData.settings.target_rpm} />
-            )}
-            {activeTab === 'vibration' && (
+            </div>
+            <div style={{ display: activeTab === 'vibration' ? 'contents' : 'none' }}>
               <VibrationChart cycles={dailyData.cycles} />
-            )}
-            {activeTab === 'vib3' && (
+            </div>
+            <div style={{ display: activeTab === 'vib3' ? 'contents' : 'none' }}>
               <VibrationChart3Panel cycles={dailyData.cycles} />
-            )}
+            </div>
           </div>
 
           {/* Footer */}

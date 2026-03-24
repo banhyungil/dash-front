@@ -379,19 +379,24 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
 
   return (
     <div className="w-full h-full flex flex-col relative">
-      <div className="flex items-center  gap-2 px-2.5 py-2">
-        <button
-          onClick={() => setColorBySensor(!colorBySensor)}
-          className="px-3 py-1.5 border-none rounded text-[12px] font-medium cursor-pointer transition-all text-text"
-          style={{ backgroundColor: colorBySensor ? '#2563EB' : '#475569' }}
-        >
-          {colorBySensor ? '센서별 색상' : '단일 색상'}
-        </button>
-        {totalHighVibEvents > 0 && (
-          <div className="px-3 py-1.5 rounded text-[12px] font-semibold text-text bg-red">
-            ⚠️ 고진동 이벤트: {totalHighVibEvents.toLocaleString()}건
-          </div>
-        )}
+      <div className="flex items-center justify-between px-2.5 py-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-text">진동 파형</span>
+          {totalHighVibEvents > 0 && (
+            <div className="px-2 py-0.5 rounded text-[11px] font-semibold text-text bg-red" title="고진동 이벤트 (>0.3g 초과)">
+              ⚠️ {totalHighVibEvents.toLocaleString()}건
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setColorBySensor(!colorBySensor)}
+            className="px-2 py-0.5 border-none rounded text-[11px] font-semibold cursor-pointer transition-all text-text"
+            style={{ backgroundColor: colorBySensor ? '#2563EB' : '#475569' }}
+          >
+            {colorBySensor ? '센서별 색상' : '단일 색상'}
+          </button>
+        </div>
       </div>
       <div className="flex-1 min-h-0">
       <Plot

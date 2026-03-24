@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
+import { DEVICE_COLORS } from '../constants/colors';
 
 interface RpmChartProps {
   cycles: CycleData[];
@@ -25,13 +26,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
       return {};
     }
 
-    // Device color mapping (using Palette colors)
-    const deviceColors: Record<string, string> = {
-      'R1': '#EF4444', // Alert Red
-      'R2': '#F49E0A', // Trend Orange
-      'R3': '#0FB880', // Green Accent
-      'R4': '#2563EB', // Brand Blue
-    };
+    const deviceColors = DEVICE_COLORS;
 
     // Convert timestamp to hours from midnight
     const getHoursFromMidnight = (timestamp: string): number => {
@@ -223,29 +218,34 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
 
   return (
     <div className="w-full h-full flex flex-col relative">
-      <div className="flex items-center gap-2 px-2.5 py-2">
-        <button
-          onClick={() => setColorByDevice(!colorByDevice)}
-          className="px-3 py-1.5 border-none rounded text-[12px] font-medium cursor-pointer transition-all text-text"
-          style={{ backgroundColor: colorByDevice ? '#2563EB' : '#475569' }}
-        >
-          {colorByDevice ? 'Device별 색상' : '단일 색상'}
-        </button>
-        {(['R1', 'R2', 'R3', 'R4'] as const).map(s => (
+      <div className="flex items-center justify-between px-2.5 py-2">
+        <span className="text-xs font-semibold text-text">RPM 타임라인</span>
+        <div className="flex items-center gap-2">
           <button
-            key={s}
-            onClick={() => toggleSession(s)}
-            className="px-3 py-1.5 border-none rounded text-[12px] font-medium cursor-pointer transition-opacity text-text"
-            style={{
-              backgroundColor: visibleSessions.has(s)
-                ? (plotData.deviceColors?.[s] ?? '#475569')
-                : '#313244',
-              opacity: visibleSessions.has(s) ? 1 : 0.4,
-            }}
+            onClick={() => setColorByDevice(!colorByDevice)}
+            className="px-2 py-0.5 border-none rounded text-[11px] font-semibold cursor-pointer transition-all text-text"
+            style={{ backgroundColor: colorByDevice ? '#2563EB' : '#475569' }}
           >
-            {s}
+            {colorByDevice ? 'Device별 색상' : '단일 색상'}
           </button>
-        ))}
+          <span className="text-muted">|</span>
+          {(['R1', 'R2', 'R3', 'R4'] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => toggleSession(s)}
+              className="px-2 py-0.5 border-none rounded text-[11px] font-semibold cursor-pointer transition-opacity"
+              style={{
+                backgroundColor: visibleSessions.has(s)
+                  ? (DEVICE_COLORS[s] ?? '#475569')
+                  : '#313244',
+                opacity: visibleSessions.has(s) ? 1 : 0.4,
+                color: '#cdd6f4',
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="flex-1 min-h-0">
       <Plot
