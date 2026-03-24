@@ -22,6 +22,14 @@ export default function CycleDetailModal({ date, session, cycleIndex, onClose }:
       .finally(() => setLoading(false));
   }, [date, session, cycleIndex]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const plotLayout = (title: string) => ({
     title: { text: title, font: { size: 13, color: '#cdd6f4' } },
     paper_bgcolor: '#1e1e2e',
