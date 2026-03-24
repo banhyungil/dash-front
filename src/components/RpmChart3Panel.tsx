@@ -1,7 +1,8 @@
 import { useMemo, useState, useCallback } from 'react';
 import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
-import { DEVICE_COLORS, DARK } from '../constants/colors';
+import { DARK, getDeviceColors } from '../constants/colors';
+import { useSettings } from '../hooks/useSettings';
 
 interface RpmChart3PanelProps {
   cycles: CycleData[];
@@ -104,8 +105,10 @@ function processData(cycles: CycleData[]) {
  * - Panel 3: Continuous Run — 연속 운전시간 면적 차트 (15분 갭 시 리셋)
  */
 export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProps) {
+  const { sessions } = useSettings();
+  const DEVICE_COLORS = useMemo(() => getDeviceColors(sessions), [sessions]);
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
-  const [visibleSessions, setVisibleSessions] = useState<Set<string>>(new Set(['R1', 'R2', 'R3', 'R4']));
+  const [visibleSessions, setVisibleSessions] = useState<Set<string>>(() => new Set(sessions));
   const data = useMemo(() => processData(cycles), [cycles]);
 
   /** 디바이스 표시/숨기기 토글 */
@@ -128,7 +131,7 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
   // Panel 1: Gantt
   const p1Shapes: any[] = [];
   const p1Traces: any[] = [];
-  ['R1', 'R2', 'R3', 'R4'].forEach((s, idx) => {
+  sessions.forEach((s, idx) => {
     const segs = data.segments.filter(seg => seg.session === s && visibleSessions.has(s));
     const y = 3 - idx;
     segs.forEach(seg => {
@@ -154,7 +157,7 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
 
   // Panel 2: MPM step
   const p2Traces: any[] = [];
-  ['R1', 'R2', 'R3', 'R4'].forEach(s => {
+  sessions.forEach(s => {
     if (!visibleSessions.has(s)) return;
     const segs = data.segments.filter(seg => seg.session === s);
     const sCycles = cycles.filter(c => c.session === s).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -179,7 +182,7 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
 
   // Panel 3: Continuous run
   const p3Traces: any[] = [];
-  ['R1', 'R2', 'R3', 'R4'].forEach(s => {
+  sessions.forEach(s => {
     if (!visibleSessions.has(s)) return;
     const pts = data.runPoints.filter(p => p.session === s);
     if (!pts.length) return;
@@ -239,8 +242,10 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
             shapes: p1Shapes, showlegend: false,
             yaxis: {
               title: { text: '가동 구간', font: { size: 11 } },
-              tickmode: 'array', tickvals: [0, 1, 2, 3], ticktext: ['R4', 'R3', 'R2', 'R1'],
-              range: [-0.5, 3.5], gridcolor: DARK.grid,
+              tickmode: 'array',
+              tickvals: sessions.map((_, i) => i),
+              ticktext: [...sessions].reverse(),
+              range: [-0.5, sessions.length - 0.5], gridcolor: DARK.grid,
             },
           })}
           config={{ displayModeBar: false }}
@@ -274,6 +279,7 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
         <Plot
           data={p3Traces}
           layout={baseLayout('연속 운전 (h)', {
+            margin: { l: 55, r: 15, t: 5, b: 30 },
             xaxis: {
               range: xRange, gridcolor: DARK.grid, zeroline: false,
               title: { text: 'Time', font: { size: 11 } },

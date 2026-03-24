@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
-import { DEVICE_COLORS } from '../constants/colors';
+import { getDeviceColors } from '../constants/colors';
+import { useSettings } from '../hooks/useSettings';
 
 interface RpmChartProps {
   cycles: CycleData[];
@@ -10,8 +11,10 @@ interface RpmChartProps {
 }
 
 export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
+  const { sessions } = useSettings();
+  const deviceColors = useMemo(() => getDeviceColors(sessions), [sessions]);
   const [colorByDevice, setColorByDevice] = useState(false);
-  const [visibleSessions, setVisibleSessions] = useState<Set<string>>(new Set(['R1', 'R2', 'R3', 'R4']));
+  const [visibleSessions, setVisibleSessions] = useState<Set<string>>(() => new Set(sessions));
 
   const toggleSession = (session: string) => {
     setVisibleSessions(prev => {
@@ -25,8 +28,6 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
     if (cycles.length === 0) {
       return {};
     }
-
-    const deviceColors = DEVICE_COLORS;
 
     // Convert timestamp to hours from midnight
     const getHoursFromMidnight = (timestamp: string): number => {
@@ -163,7 +164,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
     }
 
     return { sessionData, deviceColors, operationSegments, cycleRects };
-  }, [cycles]);
+  }, [cycles, deviceColors]);
 
   if (cycles.length === 0) {
     return (
@@ -229,14 +230,14 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
             {colorByDevice ? 'Device별 색상' : '단일 색상'}
           </button>
           <span className="text-muted">|</span>
-          {(['R1', 'R2', 'R3', 'R4'] as const).map(s => (
+          {sessions.map(s => (
             <button
               key={s}
               onClick={() => toggleSession(s)}
               className="px-2 py-0.5 border-none rounded text-[11px] font-semibold cursor-pointer transition-opacity"
               style={{
                 backgroundColor: visibleSessions.has(s)
-                  ? (DEVICE_COLORS[s] ?? '#475569')
+                  ? (deviceColors[s] ?? '#475569')
                   : '#313244',
                 opacity: visibleSessions.has(s) ? 1 : 0.4,
                 color: '#cdd6f4',

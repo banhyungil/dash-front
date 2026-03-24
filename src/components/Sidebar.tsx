@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 const navItems = [
   { to: '/', label: '일일 차트', icon: '📊' },
   { to: '/manager', label: '데이터 관리', icon: '📁' },
+  { to: '/settings', label: '설정', icon: '⚙️' },
 ];
 
 export default function Sidebar() {

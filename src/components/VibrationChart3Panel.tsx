@@ -1,7 +1,8 @@
 import { useMemo, useState, useCallback } from 'react';
 import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
-import { DEVICE_COLORS, DARK } from '../constants/colors';
+import { DARK, getDeviceColors } from '../constants/colors';
+import { useSettings } from '../hooks/useSettings';
 
 interface VibrationChart3PanelProps {
   cycles: CycleData[];
@@ -21,10 +22,12 @@ function getStatsKey(sensor: Sensor, axis: Axis): string {
 }
 
 export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelProps) {
+  const { sessions } = useSettings();
+  const DEVICE_COLORS = useMemo(() => getDeviceColors(sessions), [sessions]);
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
   const [sensor, setSensor] = useState<Sensor>('VIB');
   const [axis, setAxis] = useState<Axis>('X');
-  const [visibleSessions, setVisibleSessions] = useState<Set<string>>(new Set(['R1', 'R2', 'R3', 'R4']));
+  const [visibleSessions, setVisibleSessions] = useState<Set<string>>(() => new Set(sessions));
 
   const toggleSession = (session: string) => {
     setVisibleSessions(prev => {
@@ -56,7 +59,7 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
 
   // Panel 1: Box Plot (Q1/Median/Q3 bands)
   const p1Traces: any[] = [];
-  ['R1', 'R2', 'R3', 'R4'].forEach(s => {
+  sessions.forEach(s => {
     if (!visibleSessions.has(s)) return;
     const pts = sortedCycles.filter(c => c.session === s);
     if (!pts.length) return;
@@ -92,7 +95,7 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
 
   // Panel 2: RMS / Peak trend
   const p2Traces: any[] = [];
-  ['R1', 'R2', 'R3', 'R4'].forEach(s => {
+  sessions.forEach(s => {
     if (!visibleSessions.has(s)) return;
     const pts = sortedCycles.filter(c => c.session === s);
     if (!pts.length) return;
@@ -121,7 +124,7 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
 
   // Panel 3: Burst / Impact event counts
   const p3Traces: any[] = [];
-  ['R1', 'R2', 'R3', 'R4'].forEach(s => {
+  sessions.forEach(s => {
     if (!visibleSessions.has(s)) return;
     const pts = sortedCycles.filter(c => c.session === s);
     if (!pts.length) return;

@@ -6,8 +6,8 @@ interface KpiCardsProps {
 }
 
 const KpiCards: React.FC<KpiCardsProps> = ({ cycles }) => {
-  // 총 가동시간 계산 (시간 단위)
-  const totalOperationTime = cycles.reduce((sum, cycle) => sum + cycle.duration_ms, 0) / (1000 * 60 * 60);
+  // 총 가동시간 계산 (분 단위)
+  const totalOperationMinutes = cycles.reduce((sum, cycle) => sum + cycle.duration_ms, 0) / (1000 * 60);
 
   // 평균 MPM 계산
   const avgMpm = cycles.length > 0
@@ -42,7 +42,7 @@ const KpiCards: React.FC<KpiCardsProps> = ({ cycles }) => {
 
   const cards = [
     { label: '총 사이클', value: `${cycles.length}`, colorClass: 'text-brand' },
-    { label: '총 가동시간', value: `${totalOperationTime.toFixed(1)}h`, colorClass: 'text-brand' },
+    { label: '총 가동시간', value: `${totalOperationMinutes.toFixed(1)}분`, colorClass: 'text-brand' },
     { label: '가동 롤러', value: `${activeSessions} / 4`, colorClass: 'text-green' },
     { label: '평균 RPM', value: `${avgRpm.toFixed(1)}`, colorClass: 'text-green' },
     { label: '평균 MPM', value: `${avgMpm.toFixed(1)} m/m`, colorClass: 'text-green' },
