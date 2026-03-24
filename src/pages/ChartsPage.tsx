@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchDailyCycles } from '../api/cycles';
+import { useDateStore } from '../stores/useDateStore';
 import DateCalendar from '../components/DateCalendar';
 import KpiCards from '../components/KpiCards';
 import RpmChart from '../components/RpmChart';
@@ -10,7 +10,7 @@ import VibrationChart from '../components/VibrationChart';
 type Tab = 'rpm' | 'vibration';
 
 export default function ChartsPage() {
-  const { month, date } = useParams<{ month: string; date: string }>();
+  const { month, date } = useDateStore();
   const [activeTab, setActiveTab] = useState<Tab>('rpm');
   const [calendarOpen, setCalendarOpen] = useState(false);
 
@@ -58,7 +58,7 @@ export default function ChartsPage() {
           <>
             <div className="fixed inset-0 z-10" onClick={() => setCalendarOpen(false)} />
             <div className="absolute left-5 top-full mt-1 z-20 shadow-lg rounded-xl">
-              <DateCalendar />
+              <DateCalendar onSelect={() => setCalendarOpen(false)} />
             </div>
           </>
         )}

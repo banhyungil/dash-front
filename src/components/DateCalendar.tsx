@@ -1,13 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
 import { fetchMonths, fetchDates } from '../api/cycles';
+import { useDateStore } from '../stores/useDateStore';
 import type { MonthInfo, DateInfo } from '../api/types';
 
-export default function DateCalendar() {
-  const navigate = useNavigate();
-  const { month: urlMonth, date: urlDate } = useParams<{ month: string; date: string }>();
+interface DateCalendarProps {
+  onSelect?: () => void;
+}
+
+export default function DateCalendar({ onSelect }: DateCalendarProps) {
+  const { month: storeMonth, date: storeDate, selectDate } = useDateStore();
 
   const [months, setMonths] = useState<MonthInfo[]>([]);
   const [dateInfos, setDateInfos] = useState<DateInfo[]>([]);
@@ -17,20 +20,20 @@ export default function DateCalendar() {
   useEffect(() => {
     fetchMonths().then((data) => {
       setMonths(data);
-      if (urlMonth) {
-        setDisplayMonth(parseYYMM(urlMonth));
+      if (storeMonth) {
+        setDisplayMonth(parseYYMM(storeMonth));
       } else if (data.length > 0) {
         setDisplayMonth(parseYYMM(data[0].month));
       }
     }).catch(console.error);
   }, []);
 
-  // URL 월 변경 시 displayMonth 동기화
+  // store 월 변경 시 displayMonth 동기화
   useEffect(() => {
-    if (urlMonth) {
-      setDisplayMonth(parseYYMM(urlMonth));
+    if (storeMonth) {
+      setDisplayMonth(parseYYMM(storeMonth));
     }
-  }, [urlMonth]);
+  }, [storeMonth]);
 
   // displayMonth → YYMM 키로 변환
   const currentMonthKey = displayMonth
@@ -50,7 +53,7 @@ export default function DateCalendar() {
     }
   }, [currentMonthKey, months]);
 
-  // YYMMDD → DateInfo 맵 (캘린더 셀에서 빠르게 조회)
+  // YYMMDD → DateInfo 맵
   const dateInfoMap = useMemo(() => {
     const map = new Map<string, DateInfo>();
     dateInfos.forEach((d) => map.set(d.date, d));
@@ -65,15 +68,14 @@ export default function DateCalendar() {
 
   // 현재 선택된 날짜
   const selectedDate = useMemo(() => {
-    if (!urlDate) return undefined;
-    return parseYYMMDD(urlDate);
-  }, [urlDate]);
+    if (!storeDate) return undefined;
+    return parseYYMMDD(storeDate);
+  }, [storeDate]);
 
   const handleSelect = (day: Date | undefined) => {
     if (!day) return;
-    const m = toYYMM(day);
-    const d = toYYMMDD(day);
-    navigate(`/charts/${m}/${d}`);
+    selectDate(toYYMM(day), toYYMMDD(day));
+    onSelect?.();
   };
 
   const isSameDay = (a: Date, b: Date) =>
@@ -134,14 +136,12 @@ export default function DateCalendar() {
 
 // === YYMM / YYMMDD 변환 유틸 ===
 
-// "2603" → Date(2026, 2, 1)
 function parseYYMM(yymm: string): Date {
   const yy = parseInt(yymm.slice(0, 2), 10);
   const mm = parseInt(yymm.slice(2, 4), 10);
   return new Date(2000 + yy, mm - 1, 1);
 }
 
-// "260301" → Date(2026, 2, 1)
 function parseYYMMDD(yymmdd: string): Date {
   const yy = parseInt(yymmdd.slice(0, 2), 10);
   const mm = parseInt(yymmdd.slice(2, 4), 10);
@@ -149,14 +149,12 @@ function parseYYMMDD(yymmdd: string): Date {
   return new Date(2000 + yy, mm - 1, dd);
 }
 
-// Date → "2603"
 function toYYMM(date: Date): string {
   const yy = String(date.getFullYear() - 2000).padStart(2, '0');
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   return `${yy}${mm}`;
 }
 
-// Date → "260301"
 function toYYMMDD(date: Date): string {
   const yy = String(date.getFullYear() - 2000).padStart(2, '0');
   const mm = String(date.getMonth() + 1).padStart(2, '0');
