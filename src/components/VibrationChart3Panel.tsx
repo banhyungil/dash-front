@@ -22,18 +22,18 @@ function getStatsKey(sensor: Sensor, axis: Axis): string {
 }
 
 export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelProps) {
-  const { sessions } = useSettings();
-  const DEVICE_COLORS = useMemo(() => getDeviceColors(sessions), [sessions]);
+  const { deviceNames } = useSettings();
+  const DEVICE_COLORS = useMemo(() => getDeviceColors(deviceNames), [deviceNames]);
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
   const [sensor, setSensor] = useState<Sensor>('VIB');
   const [axis, setAxis] = useState<Axis>('X');
-  const [visibleSessions, setVisibleSessions] = useState<Set<string>>(() => new Set(sessions));
+  const [visibleDevices, setVisibleDevices] = useState<Set<string>>(() => new Set(deviceNames));
 
-  const toggleSession = (session: string) => {
-    setVisibleSessions(prev => {
+  const toggleDevice = (deviceName: string) => {
+    setVisibleDevices(prev => {
       const next = new Set(prev);
-      if (next.has(session)) next.delete(session);
-      else next.add(session);
+      if (next.has(deviceName)) next.delete(deviceName);
+      else next.add(deviceName);
       return next;
     });
   };
@@ -59,9 +59,9 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
 
   // Panel 1: Box Plot (Q1/Median/Q3 bands)
   const p1Traces: any[] = [];
-  sessions.forEach(s => {
-    if (!visibleSessions.has(s)) return;
-    const pts = sortedCycles.filter(c => c.session === s);
+  deviceNames.forEach(s => {
+    if (!visibleDevices.has(s)) return;
+    const pts = sortedCycles.filter(c => c.device_name === s);
     if (!pts.length) return;
 
     const times = pts.map(p => p._time);
@@ -95,9 +95,9 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
 
   // Panel 2: RMS / Peak trend
   const p2Traces: any[] = [];
-  sessions.forEach(s => {
-    if (!visibleSessions.has(s)) return;
-    const pts = sortedCycles.filter(c => c.session === s);
+  deviceNames.forEach(s => {
+    if (!visibleDevices.has(s)) return;
+    const pts = sortedCycles.filter(c => c.device_name === s);
     if (!pts.length) return;
 
     const times = pts.map(p => p._time);
@@ -124,9 +124,9 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
 
   // Panel 3: Burst / Impact event counts
   const p3Traces: any[] = [];
-  sessions.forEach(s => {
-    if (!visibleSessions.has(s)) return;
-    const pts = sortedCycles.filter(c => c.session === s);
+  deviceNames.forEach(s => {
+    if (!visibleDevices.has(s)) return;
+    const pts = sortedCycles.filter(c => c.device_name === s);
     if (!pts.length) return;
 
     const times = pts.map(p => p._time);
@@ -175,11 +175,11 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
           {Object.entries(DEVICE_COLORS).map(([d, c]) => (
             <button
               key={d}
-              onClick={() => toggleSession(d)}
+              onClick={() => toggleDevice(d)}
               className="px-2 py-0.5 border-none rounded text-[11px] font-semibold cursor-pointer transition-opacity"
               style={{
-                background: visibleSessions.has(d) ? c : '#313244',
-                opacity: visibleSessions.has(d) ? 1 : 0.4,
+                background: visibleDevices.has(d) ? c : '#313244',
+                opacity: visibleDevices.has(d) ? 1 : 0.4,
                 color: '#cdd6f4',
               }}
             >

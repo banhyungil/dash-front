@@ -7,20 +7,20 @@ import { useSettings } from '../hooks/useSettings';
 interface RpmChartProps {
   cycles: CycleData[];
   targetRpm: number;
-  onCycleClick?: (session: string, cycleIndex: number) => void;
+  onCycleClick?: (deviceName: string, cycleIndex: number) => void;
 }
 
 export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
-  const { sessions } = useSettings();
-  const deviceColors = useMemo(() => getDeviceColors(sessions), [sessions]);
+  const { deviceNames } = useSettings();
+  const deviceColors = useMemo(() => getDeviceColors(deviceNames), [deviceNames]);
   const [colorByDevice, setColorByDevice] = useState(false);
-  const [visibleSessions, setVisibleSessions] = useState<Set<string>>(() => new Set(sessions));
+  const [visibleDevices, setVisibleDevices] = useState<Set<string>>(() => new Set(deviceNames));
 
-  const toggleSession = (session: string) => {
-    setVisibleSessions(prev => {
+  const toggleDevice = (deviceName: string) => {
+    setVisibleDevices(prev => {
       const next = new Set(prev);
-      if (next.has(session)) next.delete(session);
-      else next.add(session);
+      if (next.has(deviceName)) next.delete(deviceName);
+      else next.add(deviceName);
       return next;
     });
   };
@@ -28,16 +28,6 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
     if (cycles.length === 0) {
       return {};
     }
-
-    // Convert timestamp to hours from midnight
-    const getHoursFromMidnight = (timestamp: string): number => {
-      const date = new Date(timestamp);
-      const hours = date.getHours();
-      const minutes = date.getMinutes();
-      const seconds = date.getSeconds();
-      const ms = date.getMilliseconds();
-      return hours + minutes / 60 + seconds / 3600 + ms / 3600000;
-    };
 
     // Get 10-minute timeslot (returns hour as decimal)
     const get10MinSlot = (timestamp: string): number => {
@@ -49,18 +39,18 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
     };
 
     // Get device offset within 10-minute slot (in hours)
-    const getDeviceOffset = (session: string): number => {
+    const getDeviceOffset = (deviceName: string): number => {
       const offsets: Record<string, number> = {
         'R1': 0,      // 0 minutes
         'R2': 2 / 60, // 2 minutes
         'R3': 4 / 60, // 4 minutes
         'R4': 6 / 60, // 6 minutes
       };
-      return offsets[session] || 0;
+      return offsets[deviceName] || 0;
     };
 
-    // Group by session
-    const sessionData: Record<string, { x: number[]; y: number[]; text: string[]; cycleIndices: number[] }> = {};
+    // Group by device_name
+    const deviceData: Record<string, { x: number[]; y: number[]; text: string[]; cycleIndices: number[] }> = {};
 
     // Store cycle rectangles for rendering
     const cycleRects: Array<{
@@ -70,7 +60,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
       y1: number;
       mpm: number;
       rpm: number;
-      session: string;
+      deviceName: string;
       timeStr: string;
       timestamp: string;
       duration_s: number;
@@ -78,9 +68,9 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
     }> = [];
 
     cycles.forEach((cycle) => {
-      const session = cycle.session;
-      if (!sessionData[session]) {
-        sessionData[session] = { x: [], y: [], text: [], cycleIndices: [] };
+      const deviceName = cycle.device_name;
+      if (!deviceData[deviceName]) {
+        deviceData[deviceName] = { x: [], y: [], text: [], cycleIndices: [] };
       }
 
       const avgMpm = Math.round(cycle.mpm_mean); // Round to integer
@@ -90,7 +80,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
 
       // Calculate position based on 10-minute slot + device offset
       const slotStart = get10MinSlot(cycle.timestamp);
-      const deviceOffset = getDeviceOffset(session);
+      const deviceOffset = getDeviceOffset(deviceName);
       const cycleStartHours = slotStart + deviceOffset;
 
       // Format time for hover text (using slot-based time)
@@ -100,15 +90,15 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
       const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
       // Store for legacy point display (for hover)
-      sessionData[session].x.push(cycleStartHours);
-      sessionData[session].y.push(avgMpm);
-      sessionData[session].cycleIndices.push(cycle.cycle_index);
-      sessionData[session].text.push(
+      deviceData[deviceName].x.push(cycleStartHours);
+      deviceData[deviceName].y.push(avgMpm);
+      deviceData[deviceName].cycleIndices.push(cycle.cycle_index);
+      deviceData[deviceName].text.push(
         `Time: ${timeStr}<br>` +
         `Duration: ${durationSeconds.toFixed(1)}s<br>` +
         `MPM: ${avgMpm}<br>` +
         `RPM: ${avgRpm.toFixed(1)}<br>` +
-        `Session: ${session}`
+        `Device: ${deviceName}`
       );
 
       // Store rectangle data
@@ -119,17 +109,17 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
         y1: avgMpm + 0.1,
         mpm: avgMpm,
         rpm: avgRpm,
-        session: session,
+        deviceName: deviceName,
         timeStr: timeStr,
         timestamp: cycle.timestamp,
         duration_s: durationSeconds,
-        color: deviceColors[session] || '#F49E0A'
+        color: deviceColors[deviceName] || '#F49E0A'
       });
     });
 
     // Calculate operation segments for background shapes
     const allPoints: Array<{ x: number; y: number }> = [];
-    Object.values(sessionData).forEach(data => {
+    Object.values(deviceData).forEach(data => {
       data.x.forEach((x, i) => {
         allPoints.push({ x, y: data.y[i] });
       });
@@ -163,7 +153,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
       });
     }
 
-    return { sessionData, deviceColors, operationSegments, cycleRects };
+    return { deviceData, deviceColors, operationSegments, cycleRects };
   }, [cycles, deviceColors]);
 
   if (cycles.length === 0) {
@@ -174,23 +164,23 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
     );
   }
 
-  // Create invisible scatter trace for hover (at center of each bar), filtered by visible sessions
-  const allPoints: Array<{ x: number; y: number; text: string; session: string; cycleIndex: number }> = [];
-  Object.entries(plotData.sessionData || {}).forEach(([session, data]) => {
-    if (!visibleSessions.has(session)) return;
+  // Create invisible scatter trace for hover (at center of each bar), filtered by visible devices
+  const allPoints: Array<{ x: number; y: number; text: string; deviceName: string; cycleIndex: number }> = [];
+  Object.entries(plotData.deviceData || {}).forEach(([deviceName, data]) => {
+    if (!visibleDevices.has(deviceName)) return;
     data.x.forEach((x, i) => {
       allPoints.push({
         x,
         y: data.y[i],
         text: data.text[i],
-        session,
+        deviceName,
         cycleIndex: data.cycleIndices[i],
       });
     });
   });
 
-  // Filter cycle rects by visible sessions
-  const filteredRects = (plotData.cycleRects || []).filter(r => visibleSessions.has(r.session));
+  // Filter cycle rects by visible devices
+  const filteredRects = (plotData.cycleRects || []).filter(r => visibleDevices.has(r.deviceName));
 
   // Create hover trace (invisible markers for hover info)
   const hoverTrace = {
@@ -230,16 +220,16 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
             {colorByDevice ? 'Device별 색상' : '단일 색상'}
           </button>
           <span className="text-muted">|</span>
-          {sessions.map(s => (
+          {deviceNames.map(s => (
             <button
               key={s}
-              onClick={() => toggleSession(s)}
+              onClick={() => toggleDevice(s)}
               className="px-2 py-0.5 border-none rounded text-[11px] font-semibold cursor-pointer transition-opacity"
               style={{
-                backgroundColor: visibleSessions.has(s)
+                backgroundColor: visibleDevices.has(s)
                   ? (deviceColors[s] ?? '#475569')
                   : '#313244',
-                opacity: visibleSessions.has(s) ? 1 : 0.4,
+                opacity: visibleDevices.has(s) ? 1 : 0.4,
                 color: '#cdd6f4',
               }}
             >
@@ -379,7 +369,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
             const idx = event.points[0].pointIndex;
             const point = allPoints[idx];
             if (point) {
-              onCycleClick(point.session, point.cycleIndex);
+              onCycleClick(point.deviceName, point.cycleIndex);
             }
           }
         }}

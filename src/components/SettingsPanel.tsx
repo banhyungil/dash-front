@@ -8,7 +8,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   device: '디바이스 매핑',
 };
 
-const REINGEST_KEYS = new Set(['shaft_dia', 'pattern_width', 'expected_tolerance', 'device_session_map', 'gravity_offset']);
+const REINGEST_KEYS = new Set(['shaft_dia', 'pattern_width', 'expected_tolerance', 'device_name_map', 'gravity_offset']);
 
 const inputClass = 'px-3 py-1.5 text-sm bg-bg text-text border border-border rounded-md outline-none focus:border-blue';
 const saveBtn = 'px-3 py-1.5 text-xs font-semibold border-none rounded-md cursor-pointer transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-blue text-bg';
@@ -126,14 +126,14 @@ export default function SettingsPanel() {
           </div>
         </div>
 
-        {/* 우측: 디바이스→세션 매핑 */}
+        {/* 우측: 디바이스→이름 매핑 */}
         <div className="flex flex-col gap-4">
           <div className="bg-overlay rounded-xl p-5">
-            <DeviceSessionEditor
-              value={getValue('device_session_map') ?? {}}
-              onChange={v => setEditedValue('device_session_map', v)}
-              isEdited={isEdited('device_session_map')}
-              onSave={() => handleSave(findSetting('device_session_map'))}
+            <DeviceNameEditor
+              value={getValue('device_name_map') ?? {}}
+              onChange={v => setEditedValue('device_name_map', v)}
+              isEdited={isEdited('device_name_map')}
+              onSave={() => handleSave(findSetting('device_name_map'))}
             />
           </div>
         </div>
@@ -151,16 +151,16 @@ export default function SettingsPanel() {
   );
 }
 
-/* ── 디바이스→세션 매핑 에디터 ── */
-function DeviceSessionEditor({ value, onChange, isEdited, onSave }: {
+/* ── 디바이스→이름 매핑 에디터 ── */
+function DeviceNameEditor({ value, onChange, isEdited, onSave }: {
   value: Record<string, string>; onChange: (v: Record<string, string>) => void; isEdited: boolean; onSave: () => void;
 }) {
   const entries = Object.entries(value);
 
-  const updateEntry = (oldId: string, newId: string, session: string) => {
+  const updateEntry = (oldId: string, newId: string, deviceName: string) => {
     const next: Record<string, string> = {};
     for (const [id, s] of Object.entries(value)) {
-      next[id === oldId ? newId : id] = id === oldId ? session : s;
+      next[id === oldId ? newId : id] = id === oldId ? deviceName : s;
     }
     onChange(next);
   };
@@ -176,32 +176,32 @@ function DeviceSessionEditor({ value, onChange, isEdited, onSave }: {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-text">디바이스→세션 매핑</h3>
+        <h3 className="text-sm font-semibold text-text">디바이스→이름 매핑</h3>
         <button className={saveBtn} disabled={!isEdited} onClick={onSave}>저장</button>
       </div>
       <table className="w-full border-collapse">
         <thead>
           <tr>
             <th className="px-3 py-2 text-left text-xs font-semibold text-subtext border-b border-overlay">디바이스 ID</th>
-            <th className="px-3 py-2 text-left text-xs font-semibold text-subtext border-b border-overlay w-28">세션</th>
+            <th className="px-3 py-2 text-left text-xs font-semibold text-subtext border-b border-overlay w-28">이름</th>
             <th className="px-3 py-2 text-right text-xs border-b border-overlay w-16"></th>
           </tr>
         </thead>
         <tbody>
-          {entries.map(([id, session], i) => (
+          {entries.map(([id, deviceName], i) => (
             <tr key={i}>
               <td className="px-3 py-1.5 border-b border-overlay">
                 <input
                   className={`${inputClass} w-full font-mono text-xs`}
                   value={id}
-                  onChange={e => updateEntry(id, e.target.value, session)}
+                  onChange={e => updateEntry(id, e.target.value, deviceName)}
                   placeholder="0013A200..."
                 />
               </td>
               <td className="px-3 py-1.5 border-b border-overlay">
                 <input
                   className={`${inputClass} w-full`}
-                  value={session}
+                  value={deviceName}
                   onChange={e => updateEntry(id, id, e.target.value)}
                   placeholder="R1"
                 />
@@ -237,7 +237,7 @@ function GravityOffsetEditor({ value, onChange, isEdited, onSave }: {
       <table className="w-full border-collapse">
         <thead>
           <tr>
-            <th className="px-3 py-2 text-left text-xs font-semibold text-subtext border-b border-overlay w-28">세션</th>
+            <th className="px-3 py-2 text-left text-xs font-semibold text-subtext border-b border-overlay w-28">디바이스명</th>
             <th className="px-3 py-2 text-left text-xs font-semibold text-subtext border-b border-overlay">Z 오프셋 (g)</th>
           </tr>
         </thead>

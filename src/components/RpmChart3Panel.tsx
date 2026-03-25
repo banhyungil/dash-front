@@ -12,7 +12,7 @@ interface RpmChart3PanelProps {
 const MERGE_GAP_MINUTES = 15;
 
 interface Segment {
-  session: string;
+  deviceName: string;
   startTime: number;
   endTime: number;
   durationHours: number;
@@ -22,7 +22,7 @@ interface Segment {
 
 interface RunPoint {
   time: number;
-  session: string;
+  deviceName: string;
   elapsedHours: number;
 }
 
@@ -33,7 +33,7 @@ function getHours(ts: string): number {
 }
 
 /**
- * 사이클 배열을 세션별로 그룹화하여 3개 패널에 필요한 데이터를 생성한다.
+ * 사이클 배열을 디바이스명별로 그룹화하여 3개 패널에 필요한 데이터를 생성한다.
  * - segments: 15분 갭 기준 병합된 연속 가동 구간 (Panel 1 Gantt, Panel 2 MPM Step)
  * - runPoints: 연속 운전 경과시간 좌표 (Panel 3 면적 차트)
  */
@@ -41,15 +41,15 @@ function processData(cycles: CycleData[]) {
   if (!cycles.length) return { segments: [] as Segment[], runPoints: [] as RunPoint[], xMin: 6, xMax: 20 };
 
   const groups: Record<string, CycleData[]> = {};
-  cycles.forEach(c => { (groups[c.session] ??= []).push(c); });
+  cycles.forEach(c => { (groups[c.device_name] ??= []).push(c); });
 
   const segments: Segment[] = [];
   const runPoints: RunPoint[] = [];
 
-  // 세션(R1~R4)별로 시간순 정렬 후, 15분 갭 기준으로 연속 가동 구간(segment)을 병합한다.
+  // 디바이스명(R1~R4)별로 시간순 정렬 후, 15분 갭 기준으로 연속 가동 구간(segment)을 병합한다.
   // segment: Gantt 바 + MPM Step 차트에 사용
   // runPoints: 연속 운전시간 면적 차트에 사용 (갭 발생 시 0으로 리셋)
-  Object.entries(groups).forEach(([session, list]) => {
+  Object.entries(groups).forEach(([deviceName, list]) => {
     const sorted = [...list].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     let cur: Segment | null = null;
     let runStart = 0; // 현재 연속 구간의 시작 시각 (시 단위)
@@ -63,7 +63,7 @@ function processData(cycles: CycleData[]) {
 
       if (isNew) {
         if (cur) segments.push(cur);
-        cur = { session, startTime: t, endTime: end, durationHours: dur, cycleCount: 1, avgMpm: c.mpm_mean };
+        cur = { deviceName, startTime: t, endTime: end, durationHours: dur, cycleCount: 1, avgMpm: c.mpm_mean };
         runStart = t;
       } else if(cur) {
         // 기존 segment에 병합: 종료시각 확장, 이동평균 갱신
@@ -74,14 +74,14 @@ function processData(cycles: CycleData[]) {
       }
 
       // 연속 운전시간 차트용: 사이클 시작/끝의 경과시간 기록
-      runPoints.push({ time: t, session, elapsedHours: t - runStart });
-      runPoints.push({ time: end, session, elapsedHours: t - runStart + dur });
+      runPoints.push({ time: t, deviceName, elapsedHours: t - runStart });
+      runPoints.push({ time: end, deviceName, elapsedHours: t - runStart + dur });
 
       // 다음 사이클과 15분 이상 갭 → 연속 운전시간 0으로 리셋
       if (i < sorted.length - 1) {
         const nextT = getHours(sorted[i + 1].timestamp);
         if (nextT - end > MERGE_GAP_MINUTES / 60) {
-          runPoints.push({ time: end + 0.001, session, elapsedHours: 0 });
+          runPoints.push({ time: end + 0.001, deviceName, elapsedHours: 0 });
           runStart = nextT;
         }
       }
@@ -100,23 +100,23 @@ function processData(cycles: CycleData[]) {
 
 /**
  * RPM 3패널 차트 컴포넌트.
- * - Panel 1: Gantt — 세션별 가동 구간 막대
+ * - Panel 1: Gantt — 디바이스명별 가동 구간 막대
  * - Panel 2: MPM Step — 사이클별 MPM 계단 차트 + target RPM 기준선
  * - Panel 3: Continuous Run — 연속 운전시간 면적 차트 (15분 갭 시 리셋)
  */
 export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProps) {
-  const { sessions } = useSettings();
-  const DEVICE_COLORS = useMemo(() => getDeviceColors(sessions), [sessions]);
+  const { deviceNames } = useSettings();
+  const DEVICE_COLORS = useMemo(() => getDeviceColors(deviceNames), [deviceNames]);
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
-  const [visibleSessions, setVisibleSessions] = useState<Set<string>>(() => new Set(sessions));
+  const [visibleDevices, setVisibleDevices] = useState<Set<string>>(() => new Set(deviceNames));
   const data = useMemo(() => processData(cycles), [cycles]);
 
   /** 디바이스 표시/숨기기 토글 */
-  const toggleSession = (session: string) => {
-    setVisibleSessions(prev => {
+  const toggleDevice = (deviceName: string) => {
+    setVisibleDevices(prev => {
       const next = new Set(prev);
-      if (next.has(session)) next.delete(session);
-      else next.add(session);
+      if (next.has(deviceName)) next.delete(deviceName);
+      else next.add(deviceName);
       return next;
     });
   };
@@ -131,8 +131,8 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
   // Panel 1: Gantt
   const p1Shapes: any[] = [];
   const p1Traces: any[] = [];
-  sessions.forEach((s, idx) => {
-    const segs = data.segments.filter(seg => seg.session === s && visibleSessions.has(s));
+  deviceNames.forEach((s, idx) => {
+    const segs = data.segments.filter(seg => seg.deviceName === s && visibleDevices.has(s));
     const y = 3 - idx;
     segs.forEach(seg => {
       p1Shapes.push({
@@ -157,10 +157,10 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
 
   // Panel 2: MPM step
   const p2Traces: any[] = [];
-  sessions.forEach(s => {
-    if (!visibleSessions.has(s)) return;
-    const segs = data.segments.filter(seg => seg.session === s);
-    const sCycles = cycles.filter(c => c.session === s).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  deviceNames.forEach(s => {
+    if (!visibleDevices.has(s)) return;
+    const segs = data.segments.filter(seg => seg.deviceName === s);
+    const sCycles = cycles.filter(c => c.device_name === s).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     segs.forEach(seg => {
       const pts = sCycles.filter(c => {
         const t = getHours(c.timestamp);
@@ -182,9 +182,9 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
 
   // Panel 3: Continuous run
   const p3Traces: any[] = [];
-  sessions.forEach(s => {
-    if (!visibleSessions.has(s)) return;
-    const pts = data.runPoints.filter(p => p.session === s);
+  deviceNames.forEach(s => {
+    if (!visibleDevices.has(s)) return;
+    const pts = data.runPoints.filter(p => p.deviceName === s);
     if (!pts.length) return;
     p3Traces.push({
       x: pts.map(p => p.time), y: pts.map(p => p.elapsedHours),
@@ -218,11 +218,11 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
           {Object.entries(DEVICE_COLORS).map(([d, c]) => (
             <button
               key={d}
-              onClick={() => toggleSession(d)}
+              onClick={() => toggleDevice(d)}
               className="flex items-center gap-1 px-2 py-0.5 border-none rounded cursor-pointer transition-opacity"
               style={{
-                background: visibleSessions.has(d) ? c : '#313244',
-                opacity: visibleSessions.has(d) ? 1 : 0.4,
+                background: visibleDevices.has(d) ? c : '#313244',
+                opacity: visibleDevices.has(d) ? 1 : 0.4,
                 color: '#cdd6f4',
                 fontSize: 11,
                 fontWeight: 600,
@@ -243,9 +243,9 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
             yaxis: {
               title: { text: '가동 구간', font: { size: 11 } },
               tickmode: 'array',
-              tickvals: sessions.map((_, i) => i),
-              ticktext: [...sessions].reverse(),
-              range: [-0.5, sessions.length - 0.5], gridcolor: DARK.grid,
+              tickvals: deviceNames.map((_, i) => i),
+              ticktext: [...deviceNames].reverse(),
+              range: [-0.5, deviceNames.length - 0.5], gridcolor: DARK.grid,
             },
           })}
           config={{ displayModeBar: false }}

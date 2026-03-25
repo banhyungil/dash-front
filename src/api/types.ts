@@ -29,7 +29,7 @@ export interface AxisStats {
 
 export interface CycleData {
   timestamp: string;
-  session: string;
+  device_name: string;
   cycle_index: number;
   date: string;
   rpm_mean: number;

@@ -18,8 +18,8 @@ export function useSettings() {
       map.has(key) ? map.get(key) : defaultValue;
   }, [settings]);
 
-  const deviceSessionMap: Record<string, string> = get('device_session_map', {});
-  const sessions: string[] = Object.values(deviceSessionMap);
+  const deviceNameMap: Record<string, string> = get('device_name_map', {});
+  const deviceNames: string[] = Object.values(deviceNameMap);
 
-  return { settings, sessions, deviceSessionMap, get };
+  return { settings, deviceNames, deviceNameMap, get };
 }

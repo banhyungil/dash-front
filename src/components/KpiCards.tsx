@@ -24,8 +24,8 @@ const KpiCards: React.FC<KpiCardsProps> = ({ cycles }) => {
     ? cycles.reduce((sum, cycle) => sum + cycle.rpm_mean, 0) / cycles.length
     : 0;
 
-  // 가동 롤러 수 (고유 session 수)
-  const activeSessions = new Set(cycles.map(cycle => cycle.session)).size;
+  // 가동 롤러 수 (고유 device_name 수)
+  const activeDevices = new Set(cycles.map(cycle => cycle.device_name)).size;
 
   // 진동 이벤트 계산 (stats 기반 — burst/peak impact 구분)
   const burstCount = cycles.reduce((sum, c) => {
@@ -43,7 +43,7 @@ const KpiCards: React.FC<KpiCardsProps> = ({ cycles }) => {
   const cards = [
     { label: '총 사이클', value: `${cycles.length}`, colorClass: 'text-brand' },
     { label: '총 가동시간', value: `${totalOperationMinutes.toFixed(1)}분`, colorClass: 'text-brand' },
-    { label: '가동 롤러', value: `${activeSessions} / 4`, colorClass: 'text-green' },
+    { label: '가동 롤러', value: `${activeDevices} / 4`, colorClass: 'text-green' },
     { label: '평균 RPM', value: `${avgRpm.toFixed(1)}`, colorClass: 'text-green' },
     { label: '평균 MPM', value: `${avgMpm.toFixed(1)} m/m`, colorClass: 'text-green' },
     { label: '최고 MPM', value: `${maxMpm.toFixed(1)} m/m`, colorClass: 'text-orange' },

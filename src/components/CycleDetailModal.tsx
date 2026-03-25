@@ -4,23 +4,23 @@ import Plot from 'react-plotly.js';
 
 interface CycleDetailModalProps {
   date: string;
-  session: string;
+  deviceName: string;
   cycleIndex: number;
   onClose: () => void;
 }
 
-export default function CycleDetailModal({ date, session, cycleIndex, onClose }: CycleDetailModalProps) {
+export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose }: CycleDetailModalProps) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'accel' | 'rpm' | 'vib'>('accel');
 
   useEffect(() => {
     setLoading(true);
-    fetchCycleDetail(date, session, cycleIndex)
+    fetchCycleDetail(date, deviceName, cycleIndex)
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [date, session, cycleIndex]);
+  }, [date, deviceName, cycleIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -48,7 +48,7 @@ export default function CycleDetailModal({ date, session, cycleIndex, onClose }:
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-overlay">
           <h3 className="text-base font-bold text-text">
-            사이클 상세 — {session} #{cycleIndex}
+            사이클 상세 — {deviceName} #{cycleIndex}
             {data && <span className="ml-2 text-xs text-subtext font-normal">{data.timestamp}</span>}
           </h3>
           <button

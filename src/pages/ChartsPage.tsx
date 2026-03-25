@@ -16,7 +16,7 @@ export default function ChartsPage() {
   const { month, date } = useDateStore();
   const [activeTab, setActiveTab] = useState<Tab>('rpm');
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [selectedCycle, setSelectedCycle] = useState<{ session: string; cycleIndex: number } | null>(null);
+  const [selectedCycle, setSelectedCycle] = useState<{ deviceName: string; cycleIndex: number } | null>(null);
 
   const hasDate = !!month && !!date;
 
@@ -139,7 +139,7 @@ export default function ChartsPage() {
           {/* 차트 — display 토글로 언마운트 방지 */}
           <div className="flex-1 p-4 overflow-hidden relative">
             <div style={{ display: activeTab === 'rpm' ? 'contents' : 'none' }}>
-              <RpmChart cycles={dailyData.cycles} targetRpm={dailyData.settings.target_rpm} onCycleClick={(session, cycleIndex) => setSelectedCycle({ session, cycleIndex })} />
+              <RpmChart cycles={dailyData.cycles} targetRpm={dailyData.settings.target_rpm} onCycleClick={(deviceName, cycleIndex) => setSelectedCycle({ deviceName, cycleIndex })} />
             </div>
             <div style={{ display: activeTab === 'rpm3' ? 'contents' : 'none' }}>
               <RpmChart3Panel cycles={dailyData.cycles} targetRpm={dailyData.settings.target_rpm} />
@@ -163,7 +163,7 @@ export default function ChartsPage() {
       {selectedCycle && date && (
         <CycleDetailModal
           date={date}
-          session={selectedCycle.session}
+          deviceName={selectedCycle.deviceName}
           cycleIndex={selectedCycle.cycleIndex}
           onClose={() => setSelectedCycle(null)}
         />

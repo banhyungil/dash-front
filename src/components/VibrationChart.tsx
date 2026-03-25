@@ -1,6 +1,8 @@
 import { useMemo, useState, useCallback } from 'react';
 import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
+import { getDeviceColors } from '../constants/colors';
+import { useSettings } from '../hooks/useSettings';
 
 interface VibrationChartProps {
   cycles: CycleData[];
@@ -49,10 +51,32 @@ function decimateMinMax(timeData: number[], valueData: number[], factor: number)
 }
 
 export default function VibrationChart({ cycles }: VibrationChartProps) {
+  const { deviceNames } = useSettings();
+  const DEVICE_COLORS = useMemo(() => getDeviceColors(deviceNames), [deviceNames]);
   const [colorBySensor, setColorBySensor] = useState(true);
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
+  const [visibleDevices, setVisibleDevices] = useState<Set<string>>(() => new Set(deviceNames));
+
+  // setter에 함수를 전달하면 현재 state(prev)를 인자로 받음 (함수형 업데이트)
+  // 직접 값을 전달하는 것과 달리, 이전 state 기반으로 안전하게 계산 가능
+  // 예: setVisibleDevices(newSet) → 값 직접 전달
+  //     setVisibleDevices(prev => ...) → 이전 state 기반 계산
+  const toggleDevice = (deviceName: string) => {
+    setVisibleDevices(prev => {
+      const next = new Set(prev);       // prev(현재 Set)를 복사
+      if (next.has(deviceName)) next.delete(deviceName);  // 있으면 제거 (OFF)
+      else next.add(deviceName);                        // 없으면 추가 (ON)
+      return next;  // 새 Set을 반환 → React가 state 변경 감지 → 리렌더링
+    });
+  };
+
+  const filteredCycles = useMemo(
+    () => cycles.filter(c => visibleDevices.has(c.device_name)),
+    [cycles, visibleDevices]
+  );
+
   const plotData = useMemo(() => {
-    if (cycles.length === 0) {
+    if (filteredCycles.length === 0) {
       return {
         pulse_x_traces: [],
         pulse_z_traces: [],
@@ -71,11 +95,11 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
     const VIB_SAMPLE_RATE = 1000; // Hz
 
     // Gravity offset correction based on sensor mounting direction
-    const getGravityOffset = (session: string, axis: 'x' | 'z'): number => {
+    const getGravityOffset = (deviceName: string, axis: 'x' | 'z'): number => {
       if (axis === 'x') return 0; // All X axes are horizontal
       // Z axis offsets due to sensor mounting
-      if (session === 'R1') return 1;   // Upward facing (+1g)
-      if (session === 'R2') return -1;  // Downward facing (-1g)
+      if (deviceName === 'R1') return 1;   // Upward facing (+1g)
+      if (deviceName === 'R2') return -1;  // Downward facing (-1g)
       return 0; // R3, R4 horizontal (0g)
     };
 
@@ -89,13 +113,13 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
       return hours + minutes / 60 + seconds / 3600 + ms / 3600000;
     };
 
-    cycles.forEach((cycle) => {
+    filteredCycles.forEach((cycle) => {
       const cycleStartHours = getHoursFromMidnight(cycle.timestamp);
-      const session = cycle.session;
+      const deviceName = cycle.device_name;
 
-      // Get gravity offsets for this session
-      const pulse_x_offset = getGravityOffset(session, 'x');
-      const pulse_z_offset = getGravityOffset(session, 'z');
+      // Get gravity offsets for this device
+      const pulse_x_offset = getGravityOffset(deviceName, 'x');
+      const pulse_z_offset = getGravityOffset(deviceName, 'z');
 
       // Create separate arrays for this cycle
       const cycle_pulse_x_time: number[] = [];
@@ -156,8 +180,8 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
       const vib_start_hours = cycleStartHours + pulse_duration / 3600;
 
       // Get gravity offsets for VIB (same as pulse for same sensor)
-      const vib_x_offset = getGravityOffset(session, 'x');
-      const vib_z_offset = getGravityOffset(session, 'z');
+      const vib_x_offset = getGravityOffset(deviceName, 'x');
+      const vib_z_offset = getGravityOffset(deviceName, 'z');
 
       const cycle_vib_x_time: number[] = [];
       const cycle_vib_x_data: number[] = [];
@@ -214,7 +238,7 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
       vib_z_traces,
       highVibEvents,
     };
-  }, [cycles]);
+  }, [filteredCycles]);
 
   // Calculate decimation factor based on zoom level
   const decimationFactor = useMemo(() => {
@@ -257,7 +281,7 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
     }
   }, []);
 
-  if (cycles.length === 0) {
+  if (filteredCycles.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-muted text-sm">
         <p>No vibration data available</p>
@@ -396,6 +420,21 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
           >
             {colorBySensor ? '센서별 색상' : '단일 색상'}
           </button>
+          <span className="text-muted">|</span>
+          {Object.entries(DEVICE_COLORS).map(([d, c]) => (
+            <button
+              key={d}
+              onClick={() => toggleDevice(d)}
+              className="px-2 py-0.5 border-none rounded text-[11px] font-semibold cursor-pointer transition-opacity"
+              style={{
+                background: visibleDevices.has(d) ? c : '#313244',
+                opacity: visibleDevices.has(d) ? 1 : 0.4,
+                color: '#cdd6f4',
+              }}
+            >
+              {d}
+            </button>
+          ))}
         </div>
       </div>
       <div className="flex-1 min-h-0">
@@ -512,4 +551,3 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
     </div>
   );
 }
-

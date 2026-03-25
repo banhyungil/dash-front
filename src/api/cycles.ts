@@ -16,5 +16,5 @@ export const exportCycles = (month: string, date: string) =>
 export const downloadExcel = (month: string, date: string) =>
   client.get('/cycles/export-excel', { params: { month, date }, responseType: 'blob' }).then(res => res.data as Blob);
 
-export const fetchCycleDetail = (date: string, session: string, cycleIndex: number) =>
-  client.get('/cycles/detail', { params: { date, session, cycle_index: cycleIndex } }).then(res => res.data);
+export const fetchCycleDetail = (date: string, deviceName: string, cycleIndex: number) =>
+  client.get('/cycles/detail', { params: { date, device_name: deviceName, cycle_index: cycleIndex } }).then(res => res.data);
