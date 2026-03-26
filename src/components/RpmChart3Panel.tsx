@@ -3,123 +3,20 @@ import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
 import { DARK, getDeviceColors } from '../constants/colors';
 import { useSettings } from '../hooks/useSettings';
+import { useDeviceFilter } from '../hooks/useDeviceFilter';
+import { processData, getHours } from '../utils/chartDataProcessors';
 
 interface RpmChart3PanelProps {
   cycles: CycleData[];
   targetRpm: number;
 }
 
-const MERGE_GAP_MINUTES = 15;
-
-interface Segment {
-  deviceName: string;
-  startTime: number;
-  endTime: number;
-  durationHours: number;
-  cycleCount: number;
-  avgMpm: number;
-}
-
-interface RunPoint {
-  time: number;
-  deviceName: string;
-  elapsedHours: number;
-}
-
-/** ISO 타임스탬프를 자정 기준 소수점 시(hour) 단위로 변환. 예: "2026-03-24T14:30:00" → 14.5 */
-function getHours(ts: string): number {
-  const d = new Date(ts);
-  return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
-}
-
-/**
- * 사이클 배열을 디바이스명별로 그룹화하여 3개 패널에 필요한 데이터를 생성한다.
- * - segments: 15분 갭 기준 병합된 연속 가동 구간 (Panel 1 Gantt, Panel 2 MPM Step)
- * - runPoints: 연속 운전 경과시간 좌표 (Panel 3 면적 차트)
- */
-function processData(cycles: CycleData[]) {
-  if (!cycles.length) return { segments: [] as Segment[], runPoints: [] as RunPoint[], xMin: 6, xMax: 20 };
-
-  const groups: Record<string, CycleData[]> = {};
-  cycles.forEach(c => { (groups[c.device_name] ??= []).push(c); });
-
-  const segments: Segment[] = [];
-  const runPoints: RunPoint[] = [];
-
-  // 디바이스명(R1~R4)별로 시간순 정렬 후, 15분 갭 기준으로 연속 가동 구간(segment)을 병합한다.
-  // segment: Gantt 바 + MPM Step 차트에 사용
-  // runPoints: 연속 운전시간 면적 차트에 사용 (갭 발생 시 0으로 리셋)
-  Object.entries(groups).forEach(([deviceName, list]) => {
-    const sorted = [...list].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    let cur: Segment | null = null;
-    let runStart = 0; // 현재 연속 구간의 시작 시각 (시 단위)
-
-    sorted.forEach((c, i) => {
-      const t = getHours(c.timestamp);
-      const dur = c.duration_ms / 3600000;
-      const end = t + dur;
-      // 이전 구간과 15분 이상 떨어지면 새 segment 시작
-      const isNew = !cur || (t - cur.endTime) > MERGE_GAP_MINUTES / 60;
-
-      if (isNew) {
-        if (cur) segments.push(cur);
-        cur = { deviceName, startTime: t, endTime: end, durationHours: dur, cycleCount: 1, avgMpm: c.mpm_mean };
-        runStart = t;
-      } else if(cur) {
-        // 기존 segment에 병합: 종료시각 확장, 이동평균 갱신
-        cur.endTime = end;
-        cur.durationHours = cur.endTime - cur.startTime;
-        cur.cycleCount++;
-        cur.avgMpm = (cur.avgMpm * (cur.cycleCount - 1) + c.mpm_mean) / cur.cycleCount;
-      }
-
-      // 연속 운전시간 차트용: 사이클 시작/끝의 경과시간 기록
-      runPoints.push({ time: t, deviceName, elapsedHours: t - runStart });
-      runPoints.push({ time: end, deviceName, elapsedHours: t - runStart + dur });
-
-      // 다음 사이클과 15분 이상 갭 → 연속 운전시간 0으로 리셋
-      if (i < sorted.length - 1) {
-        const nextT = getHours(sorted[i + 1].timestamp);
-        if (nextT - end > MERGE_GAP_MINUTES / 60) {
-          runPoints.push({ time: end + 0.001, deviceName, elapsedHours: 0 });
-          runStart = nextT;
-        }
-      }
-    });
-    if (cur) segments.push(cur);
-  });
-
-  const allT = cycles.map(c => getHours(c.timestamp));
-  return {
-    segments, runPoints,
-    xMin: Math.max(6, Math.floor(Math.min(...allT)) - 0.5),
-    xMax: Math.min(22, Math.ceil(Math.max(...allT)) + 0.5),
-  };
-}
-
-
-/**
- * RPM 3패널 차트 컴포넌트.
- * - Panel 1: Gantt — 디바이스명별 가동 구간 막대
- * - Panel 2: MPM Step — 사이클별 MPM 계단 차트 + target RPM 기준선
- * - Panel 3: Continuous Run — 연속 운전시간 면적 차트 (15분 갭 시 리셋)
- */
 export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProps) {
   const { deviceNames } = useSettings();
   const DEVICE_COLORS = useMemo(() => getDeviceColors(deviceNames), [deviceNames]);
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
-  const [visibleDevices, setVisibleDevices] = useState<Set<string>>(() => new Set(deviceNames));
+  const { visibleDevices, toggleDevice } = useDeviceFilter(deviceNames);
   const data = useMemo(() => processData(cycles), [cycles]);
-
-  /** 디바이스 표시/숨기기 토글 */
-  const toggleDevice = (deviceName: string) => {
-    setVisibleDevices(prev => {
-      const next = new Set(prev);
-      if (next.has(deviceName)) next.delete(deviceName);
-      else next.add(deviceName);
-      return next;
-    });
-  };
 
   /** Plotly 줌/팬 이벤트 시 X축 범위를 동기화 */
   const onRelayout = useCallback((e: any) => {

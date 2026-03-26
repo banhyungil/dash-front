@@ -3,22 +3,14 @@ import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
 import { DARK, getDeviceColors } from '../constants/colors';
 import { useSettings } from '../hooks/useSettings';
-
-interface VibrationChart3PanelProps {
-  cycles: CycleData[];
-}
-
-function getHours(ts: string): number {
-  const d = new Date(ts);
-  return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
-}
+import { useDeviceFilter } from '../hooks/useDeviceFilter';
+import { getHours, getStatsKey } from '../utils/chartDataProcessors';
 
 type Sensor = 'PULSE' | 'VIB';
 type Axis = 'X' | 'Y' | 'Z';
 
-function getStatsKey(sensor: Sensor, axis: Axis): string {
-  if (sensor === 'PULSE') return `stats_pulse_${axis.toLowerCase()}`;
-  return `stats_vib_${axis.toLowerCase()}`;
+interface VibrationChart3PanelProps {
+  cycles: CycleData[];
 }
 
 export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelProps) {
@@ -27,16 +19,7 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
   const [sensor, setSensor] = useState<Sensor>('VIB');
   const [axis, setAxis] = useState<Axis>('X');
-  const [visibleDevices, setVisibleDevices] = useState<Set<string>>(() => new Set(deviceNames));
-
-  const toggleDevice = (deviceName: string) => {
-    setVisibleDevices(prev => {
-      const next = new Set(prev);
-      if (next.has(deviceName)) next.delete(deviceName);
-      else next.add(deviceName);
-      return next;
-    });
-  };
+  const { visibleDevices, toggleDevice } = useDeviceFilter(deviceNames);
 
   const onRelayout = useCallback((e: any) => {
     if (e['xaxis.range[0]'] != null) setXRange([e['xaxis.range[0]'], e['xaxis.range[1]']]);

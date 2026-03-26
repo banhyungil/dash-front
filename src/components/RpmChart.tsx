@@ -3,6 +3,8 @@ import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
 import { getDeviceColors } from '../constants/colors';
 import { useSettings } from '../hooks/useSettings';
+import { useDeviceFilter } from '../hooks/useDeviceFilter';
+import { get10MinSlot, getDeviceOffset } from '../utils/chartDataProcessors';
 
 interface RpmChartProps {
   cycles: CycleData[];
@@ -14,40 +16,12 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
   const { deviceNames } = useSettings();
   const deviceColors = useMemo(() => getDeviceColors(deviceNames), [deviceNames]);
   const [colorByDevice, setColorByDevice] = useState(false);
-  const [visibleDevices, setVisibleDevices] = useState<Set<string>>(() => new Set(deviceNames));
+  const { visibleDevices, toggleDevice } = useDeviceFilter(deviceNames);
 
-  const toggleDevice = (deviceName: string) => {
-    setVisibleDevices(prev => {
-      const next = new Set(prev);
-      if (next.has(deviceName)) next.delete(deviceName);
-      else next.add(deviceName);
-      return next;
-    });
-  };
   const plotData = useMemo(() => {
     if (cycles.length === 0) {
       return {};
     }
-
-    // Get 10-minute timeslot (returns hour as decimal)
-    const get10MinSlot = (timestamp: string): number => {
-      const date = new Date(timestamp);
-      const hour = date.getHours();
-      const minute = date.getMinutes();
-      const slotMinute = Math.floor(minute / 10) * 10;
-      return hour + slotMinute / 60;
-    };
-
-    // Get device offset within 10-minute slot (in hours)
-    const getDeviceOffset = (deviceName: string): number => {
-      const offsets: Record<string, number> = {
-        'R1': 0,      // 0 minutes
-        'R2': 2 / 60, // 2 minutes
-        'R3': 4 / 60, // 4 minutes
-        'R4': 6 / 60, // 6 minutes
-      };
-      return offsets[deviceName] || 0;
-    };
 
     // Group by device_name
     const deviceData: Record<string, { x: number[]; y: number[]; text: string[]; cycleIndices: number[] }> = {};

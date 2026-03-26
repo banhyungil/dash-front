@@ -3,51 +3,11 @@ import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
 import { getDeviceColors } from '../constants/colors';
 import { useSettings } from '../hooks/useSettings';
+import { useDeviceFilter } from '../hooks/useDeviceFilter';
+import { decimateMinMax } from '../utils/decimation';
 
 interface VibrationChartProps {
   cycles: CycleData[];
-}
-
-// Min-Max Decimation for LOD
-function decimateMinMax(timeData: number[], valueData: number[], factor: number): { time: number[], value: number[] } {
-  if (factor <= 1 || timeData.length === 0) {
-    return { time: timeData, value: valueData };
-  }
-
-  const result_time: number[] = [];
-  const result_value: number[] = [];
-
-  for (let i = 0; i < timeData.length; i += factor) {
-    const end = Math.min(i + factor, timeData.length);
-
-    // Find min and max in this block
-    let minVal = valueData[i];
-    let maxVal = valueData[i];
-    let minIdx = i;
-    let maxIdx = i;
-
-    for (let j = i + 1; j < end; j++) {
-      if (valueData[j] < minVal) {
-        minVal = valueData[j];
-        minIdx = j;
-      }
-      if (valueData[j] > maxVal) {
-        maxVal = valueData[j];
-        maxIdx = j;
-      }
-    }
-
-    // Add both min and max points (in time order)
-    if (minIdx < maxIdx) {
-      result_time.push(timeData[minIdx], timeData[maxIdx]);
-      result_value.push(minVal, maxVal);
-    } else {
-      result_time.push(timeData[maxIdx], timeData[minIdx]);
-      result_value.push(maxVal, minVal);
-    }
-  }
-
-  return { time: result_time, value: result_value };
 }
 
 export default function VibrationChart({ cycles }: VibrationChartProps) {
@@ -55,20 +15,7 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
   const DEVICE_COLORS = useMemo(() => getDeviceColors(deviceNames), [deviceNames]);
   const [colorBySensor, setColorBySensor] = useState(true);
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
-  const [visibleDevices, setVisibleDevices] = useState<Set<string>>(() => new Set(deviceNames));
-
-  // setter에 함수를 전달하면 현재 state(prev)를 인자로 받음 (함수형 업데이트)
-  // 직접 값을 전달하는 것과 달리, 이전 state 기반으로 안전하게 계산 가능
-  // 예: setVisibleDevices(newSet) → 값 직접 전달
-  //     setVisibleDevices(prev => ...) → 이전 state 기반 계산
-  const toggleDevice = (deviceName: string) => {
-    setVisibleDevices(prev => {
-      const next = new Set(prev);       // prev(현재 Set)를 복사
-      if (next.has(deviceName)) next.delete(deviceName);  // 있으면 제거 (OFF)
-      else next.add(deviceName);                        // 없으면 추가 (ON)
-      return next;  // 새 Set을 반환 → React가 state 변경 감지 → 리렌더링
-    });
-  };
+  const { visibleDevices, toggleDevice } = useDeviceFilter(deviceNames);
 
   const filteredCycles = useMemo(
     () => cycles.filter(c => visibleDevices.has(c.device_name)),

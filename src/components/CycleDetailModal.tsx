@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { fetchCycleDetail } from '../api/cycles';
 import Plot from 'react-plotly.js';
+import { useCycleDetail } from '../hooks/useCycleDetail';
+import { darkPlotLayout } from '../utils/plotLayout';
 
 interface CycleDetailModalProps {
   date: string;
@@ -10,17 +11,8 @@ interface CycleDetailModalProps {
 }
 
 export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose }: CycleDetailModalProps) {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useCycleDetail(date, deviceName, cycleIndex);
   const [tab, setTab] = useState<'accel' | 'rpm' | 'vib'>('accel');
-
-  useEffect(() => {
-    setLoading(true);
-    fetchCycleDetail(date, deviceName, cycleIndex)
-      .then(setData)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [date, deviceName, cycleIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -29,17 +21,6 @@ export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
-
-  const plotLayout = (title: string) => ({
-    title: { text: title, font: { size: 13, color: '#cdd6f4' } },
-    paper_bgcolor: '#1e1e2e',
-    plot_bgcolor: '#181825',
-    font: { color: '#a6adc8', size: 10 },
-    margin: { t: 35, b: 35, l: 45, r: 15 },
-    xaxis: { gridcolor: '#313244' },
-    yaxis: { gridcolor: '#313244' },
-    height: 200,
-  });
 
   return (
     <>
@@ -59,13 +40,13 @@ export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose
           </button>
         </div>
 
-        {loading && (
+        {isLoading && (
           <div className="flex-1 flex items-center justify-center text-subtext">
             <div className="w-8 h-8 border-3 border-overlay border-t-brand rounded-full animate-spin" />
           </div>
         )}
 
-        {!loading && data && (
+        {!isLoading && data && (
           <>
             {/* Tabs */}
             <div className="flex gap-2 px-5 pt-3">
@@ -90,7 +71,7 @@ export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose
                     <Plot
                       key={key}
                       data={[{ y: data[key], type: 'scattergl', mode: 'lines', line: { width: 1, color: '#89b4fa' } }]}
-                      layout={plotLayout(key.replace('pulse_', '').toUpperCase())}
+                      layout={darkPlotLayout(key.replace('pulse_', '').toUpperCase())}
                       config={{ displayModeBar: false }}
                       useResizeHandler
                       style={{ width: '100%' }}
@@ -108,7 +89,7 @@ export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose
                     line: { width: 2, color: '#2563EB' },
                     marker: { size: 4 },
                   }]}
-                  layout={{ ...plotLayout('RPM'), height: 350 }}
+                  layout={darkPlotLayout('RPM', { height: 350 })}
                   config={{ displayModeBar: false }}
                   useResizeHandler
                   style={{ width: '100%' }}
@@ -120,7 +101,7 @@ export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose
                     <Plot
                       key={key}
                       data={[{ y: data[key], type: 'scattergl', mode: 'lines', line: { width: 1, color: '#0FB880' } }]}
-                      layout={{ ...plotLayout(key.replace('vib_', 'VIB ').toUpperCase()), height: 250 }}
+                      layout={darkPlotLayout(key.replace('vib_', 'VIB ').toUpperCase(), { height: 250 })}
                       config={{ displayModeBar: false }}
                       useResizeHandler
                       style={{ width: '100%' }}
