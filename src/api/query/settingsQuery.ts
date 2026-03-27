@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSettings } from '../settings';
-import type { Setting } from '../settings';
+import type { Setting, SettingsMap } from '../types';
 
 export const settingsQueryKeys = {
   all: ['settings'] as const,
@@ -14,15 +14,15 @@ export function useSettings() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const get = useMemo(() => {
-    const map = new Map<string, any>();
-    settings?.forEach(s => map.set(s.key, s.value));
-    return (key: string, defaultValue?: any): any =>
-      map.has(key) ? map.get(key) : defaultValue;
-  }, [settings]);
+  const settingsMap: SettingsMap = useMemo(() => {
+    const obj = {} as SettingsMap
+    settings?.forEach(s => obj[s.key] = s.value);
 
-  const deviceNameMap: Record<string, string> = get('device_name_map', {});
-  const deviceNames: string[] = Object.values(deviceNameMap);
+    return obj
+  }, [settings])
 
-  return { settings, deviceNames, deviceNameMap, get };
+  const deviceNameMap: Record<string, string> = useMemo(() => settingsMap.device_name_map ?? {}, [settingsMap]);
+  const deviceNames: string[] = useMemo(() => Object.values(deviceNameMap), [deviceNameMap]);
+
+  return { settingsMap, deviceNameMap, deviceNames };
 }

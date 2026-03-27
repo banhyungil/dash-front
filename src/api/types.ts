@@ -145,3 +145,31 @@ export interface IngestJob {
   success_cycles: number;
   result: IngestResult | null;
 }
+
+//ANCHOR - Settings
+interface RpmErrorBand {
+  val: number;
+  label: string;
+  color: string;
+}
+export interface SettingsMap {
+  shaft_dia: number;
+  pattern_width: number;
+  target_rpm: number;
+  roll_diameter: number;
+  expected_tolerance: number;
+  vib_threshold: number;
+  device_name_map: Record<string, string>;
+  gravity_offset: Record<string, { z: number }>;
+  rpm_error_bands: RpmErrorBand[];
+}
+
+type SettingKeys = keyof SettingsMap
+
+export interface Setting {
+  key: SettingKeys;
+  value: any;
+  type: 'string' | 'number' | 'json';
+  label: string;
+  category: string;
+}

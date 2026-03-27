@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { fetchSettings, updateSetting, resetSettings, type Setting } from '../api/settings';
+import { fetchSettings, updateSetting, resetSettings } from '../api/settings';
+import type { Setting } from '../api/types';
 
 export const CATEGORY_LABELS: Record<string, string> = {
   equipment: '장비 파라미터',

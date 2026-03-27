@@ -1,12 +1,5 @@
 import client from './client';
-
-export interface Setting {
-  key: string;
-  value: any;
-  type: 'string' | 'number' | 'json';
-  label: string;
-  category: string;
-}
+import type { Setting } from './types';
 
 export async function fetchSettings() {
   const res = await client.get<Setting[]>('/settings');
