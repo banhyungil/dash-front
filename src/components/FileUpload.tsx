@@ -14,7 +14,7 @@ export default function FileUpload() {
   });
 
   return (
-    <div>
+    <div className="file-upload">
       {/* Dropzone */}
       <div
         {...getRootProps()}

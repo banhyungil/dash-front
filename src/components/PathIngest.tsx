@@ -9,7 +9,7 @@ export default function PathIngest() {
   } = usePathIngest();
 
   return (
-    <div>
+    <div className="path-ingest">
       {/* Path input */}
       <div className="flex gap-2">
         <input

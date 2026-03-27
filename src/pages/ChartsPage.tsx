@@ -145,7 +145,7 @@ export default function ChartsPage() {
               <RpmChart3Panel cycles={dailyData.cycles} targetRpm={dailyData.settings.target_rpm} />
             </div>
             <div style={{ display: activeTab === 'vibration' ? 'contents' : 'none' }}>
-              <VibrationChart cycles={dailyData.cycles} />
+              <VibrationChart cycles={dailyData.cycles} month={month!} date={date!} isActive={activeTab === 'vibration'} />
             </div>
             <div style={{ display: activeTab === 'vib3' ? 'contents' : 'none' }}>
               <VibrationChart3Panel cycles={dailyData.cycles} />
@@ -160,8 +160,10 @@ export default function ChartsPage() {
           </div>
         </>
       )}
+      {/* 여러줄 jsx일떈 소괄호 묶음 */}
       {selectedCycle && date && (
         <CycleDetailModal
+          month={month!}
           date={date}
           deviceName={selectedCycle.deviceName}
           cycleIndex={selectedCycle.cycleIndex}

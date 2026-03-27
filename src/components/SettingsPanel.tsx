@@ -16,7 +16,7 @@ export default function SettingsPanel() {
   const simpleSettings = settings.filter(s => simpleCats.includes(s.category) && s.type !== 'json');
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="settings-panel flex flex-col gap-4">
       {/* 2열 그리드: 좌측 숫자 설정, 우측 테이블 설정 */}
       <div className="grid grid-cols-2 gap-4">
         {/* 좌측: 장비 파라미터 + 유효성 판정 */}

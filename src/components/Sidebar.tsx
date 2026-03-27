@@ -4,11 +4,12 @@ const navItems = [
   { to: '/', label: '일일 차트', icon: '📊' },
   { to: '/manager', label: '데이터 관리', icon: '📁' },
   { to: '/settings', label: '설정', icon: '⚙️' },
+  { to: '/test', label: '테스트', icon: '⚙️' },
 ];
 
 export default function Sidebar() {
   return (
-    <aside className="w-52 h-screen bg-surface border-r border-overlay flex flex-col shrink-0">
+    <aside className="sidebar w-52 h-screen bg-surface border-r border-overlay flex flex-col shrink-0">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-overlay">
         <h1 className="text-lg font-bold text-blue tracking-tight">Day Viewer</h1>

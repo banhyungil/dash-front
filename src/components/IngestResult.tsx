@@ -13,7 +13,7 @@ export default function IngestResult({ result }: IngestResultProps) {
   ];
 
   return (
-    <div className="bg-surface rounded-xl p-6 mt-4">
+    <div className="ingest-result bg-surface rounded-xl p-6 mt-4">
       <h3 className="text-base font-semibold text-text mb-4">적재 완료</h3>
 
       <div className="flex gap-3 flex-wrap">

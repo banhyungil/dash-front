@@ -1,18 +1,34 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Plot from 'react-plotly.js';
 import { useCycleDetail } from '../hooks/useCycleDetail';
+import { fetchDailyWaveforms } from '../api/cycles';
 import { darkPlotLayout } from '../utils/plotLayout';
+import type { WaveformCycle } from '../api/types';
 
 interface CycleDetailModalProps {
+  month: string;
   date: string;
   deviceName: string;
   cycleIndex: number;
   onClose: () => void;
 }
 
-export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose }: CycleDetailModalProps) {
+export default function CycleDetailModal({ month, date, deviceName, cycleIndex, onClose }: CycleDetailModalProps) {
   const { data, isLoading } = useCycleDetail(date, deviceName, cycleIndex);
   const [tab, setTab] = useState<'accel' | 'rpm' | 'vib'>('accel');
+
+  // 파형 데이터: daily-waveforms 캐시 활용 (이미 로드됐으면 재요청 없음)
+  const { data: waveformData, isLoading: wfLoading } = useQuery({
+    queryKey: ['daily-waveforms', month, date],
+    queryFn: () => fetchDailyWaveforms(month, date),
+  });
+
+  const waveform = useMemo<WaveformCycle | undefined>(() => {
+    return waveformData?.cycles.find(
+      wc => wc.device_name === deviceName && wc.cycle_index === cycleIndex
+    );
+  }, [waveformData, deviceName, cycleIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -25,7 +41,7 @@ export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose
   return (
     <>
       <div className="fixed inset-0 bg-black/60 z-30" onClick={onClose} />
-      <div className="fixed inset-4 z-40 bg-bg border border-overlay rounded-xl flex flex-col overflow-hidden">
+      <div className="cycle-detail-modal fixed inset-4 z-40 bg-bg border border-overlay rounded-xl flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-overlay">
           <h3 className="text-base font-bold text-text">
@@ -40,13 +56,13 @@ export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose
           </button>
         </div>
 
-        {isLoading && (
+        {(isLoading || wfLoading) && (
           <div className="flex-1 flex items-center justify-center text-subtext">
             <div className="w-8 h-8 border-3 border-overlay border-t-brand rounded-full animate-spin" />
           </div>
         )}
 
-        {!isLoading && data && (
+        {!isLoading && !wfLoading && data && (
           <>
             {/* Tabs */}
             <div className="flex gap-2 px-5 pt-3">
@@ -65,12 +81,12 @@ export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose
 
             {/* Charts */}
             <div className="flex-1 overflow-auto p-4 flex flex-col gap-2">
-              {tab === 'accel' && (
+              {tab === 'accel' && waveform && (
                 <>
-                  {['pulse_accel_x', 'pulse_accel_y', 'pulse_accel_z'].map((key) => (
+                  {(['pulse_accel_x', 'pulse_accel_y', 'pulse_accel_z'] as const).map((key) => (
                     <Plot
                       key={key}
-                      data={[{ y: data[key], type: 'scattergl', mode: 'lines', line: { width: 1, color: '#89b4fa' } }]}
+                      data={[{ y: waveform[key], type: 'scattergl', mode: 'lines', line: { width: 1, color: '#89b4fa' } }]}
                       layout={darkPlotLayout(key.replace('pulse_', '').toUpperCase())}
                       config={{ displayModeBar: false }}
                       useResizeHandler
@@ -79,11 +95,11 @@ export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose
                   ))}
                 </>
               )}
-              {tab === 'rpm' && data.rpm_data?.length > 0 && (
+              {tab === 'rpm' && waveform && waveform.rpm_data.length > 0 && (
                 <Plot
                   data={[{
-                    x: data.rpm_timeline,
-                    y: data.rpm_data,
+                    x: waveform.rpm_timeline,
+                    y: waveform.rpm_data,
                     type: 'scattergl',
                     mode: 'lines+markers',
                     line: { width: 2, color: '#2563EB' },
@@ -95,12 +111,12 @@ export default function CycleDetailModal({ date, deviceName, cycleIndex, onClose
                   style={{ width: '100%' }}
                 />
               )}
-              {tab === 'vib' && (
+              {tab === 'vib' && waveform && (
                 <>
-                  {['vib_accel_x', 'vib_accel_z'].map((key) => (
+                  {(['vib_accel_x', 'vib_accel_z'] as const).map((key) => (
                     <Plot
                       key={key}
-                      data={[{ y: data[key], type: 'scattergl', mode: 'lines', line: { width: 1, color: '#0FB880' } }]}
+                      data={[{ y: waveform[key], type: 'scattergl', mode: 'lines', line: { width: 1, color: '#0FB880' } }]}
                       layout={darkPlotLayout(key.replace('vib_', 'VIB ').toUpperCase(), { height: 250 })}
                       config={{ displayModeBar: false }}
                       useResizeHandler

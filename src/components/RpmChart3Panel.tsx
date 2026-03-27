@@ -23,7 +23,7 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
     if (e['xaxis.range[0]'] != null) setXRange([e['xaxis.range[0]'], e['xaxis.range[1]']]);
   }, []);
 
-  if (!cycles.length) return <div className="flex-1 flex items-center justify-center text-subtext">No data</div>;
+  if (!cycles.length) return <div className="rpm-chart-3panel flex-1 flex items-center justify-center text-subtext">No data</div>;
 
   // Panel 1: Gantt
   const p1Shapes: any[] = [];
@@ -107,7 +107,7 @@ export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProp
   });
 
   return (
-    <div className="flex flex-col h-full gap-1 p-2">
+    <div className="rpm-chart-3panel flex flex-col h-full gap-1 p-2">
       {/* Legend (toggleable) */}
       <div className="flex items-center justify-between px-2">
         <span className="text-xs font-semibold text-text">MPM 타임라인 분석</span>

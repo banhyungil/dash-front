@@ -29,14 +29,14 @@ export default function DateCalendar({ onSelect }: DateCalendarProps) {
 
   if (!displayMonth) {
     return (
-      <div className="bg-surface rounded-xl p-4 w-fit text-subtext text-sm">
+      <div className="date-calendar bg-surface rounded-xl p-4 w-fit text-subtext text-sm">
         캘린더 로딩 중...
       </div>
     );
   }
 
   return (
-    <div className="bg-surface rounded-xl p-4 w-fit">
+    <div className="date-calendar bg-surface rounded-xl p-4 w-fit">
       <DayPicker
         mode="single"
         month={displayMonth}

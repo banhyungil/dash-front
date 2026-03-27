@@ -52,7 +52,7 @@ const KpiCards: React.FC<KpiCardsProps> = ({ cycles }) => {
   ];
 
   return (
-    <div className="flex gap-3 flex-wrap">
+    <div className="kpi-cards flex gap-3 flex-wrap">
       {cards.map((card, index) => (
         <div
           key={index}

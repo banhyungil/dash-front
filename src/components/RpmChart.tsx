@@ -132,7 +132,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
 
   if (cycles.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-muted text-sm">
+      <div className="rpm-chart flex items-center justify-center h-full text-muted text-sm">
         <p>No data available</p>
       </div>
     );
@@ -182,7 +182,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
   const yMax = maxMpm + yMargin;
 
   return (
-    <div className="w-full h-full flex flex-col relative">
+    <div className="rpm-chart w-full h-full flex flex-col relative">
       <div className="flex items-center justify-between px-2.5 py-2">
         <span className="text-xs font-semibold text-text">RPM 타임라인</span>
         <div className="flex items-center gap-2">

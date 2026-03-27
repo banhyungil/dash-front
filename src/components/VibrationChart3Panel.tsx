@@ -38,7 +38,7 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
     [cycles]
   );
 
-  if (!cycles.length) return <div className="flex-1 flex items-center justify-center text-subtext">No data</div>;
+  if (!cycles.length) return <div className="vibration-chart-3panel flex-1 flex items-center justify-center text-subtext">No data</div>;
 
   // Panel 1: Box Plot (Q1/Median/Q3 bands)
   const p1Traces: any[] = [];
@@ -138,7 +138,7 @@ export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelPro
   });
 
   return (
-    <div className="flex flex-col h-full gap-1 p-2">
+    <div className="vibration-chart-3panel flex flex-col h-full gap-1 p-2">
       {/* Controls */}
       <div className="flex items-center justify-between px-2">
         <span className="text-xs font-semibold text-text">진동 분석 ({sensor} {effectiveAxis})</span>

@@ -9,7 +9,7 @@ export default function IngestStatus() {
 
   if (isLoading) {
     return (
-      <div className="p-6">
+      <div className="ingest-status p-6">
         <p className="text-subtext">적재 현황 로딩 중...</p>
       </div>
     );
@@ -18,7 +18,7 @@ export default function IngestStatus() {
   if (!status) return null;
 
   return (
-    <div>
+    <div className="ingest-status">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-base font-semibold text-text">적재 현황</h3>
         <button
