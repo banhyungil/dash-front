@@ -35,27 +35,40 @@ export interface CycleData {
   rpm_mean: number;
   rpm_min: number;
   rpm_max: number;
-  rpm_timeline: number[];
-  rpm_data: number[];
   mpm_mean: number;
   mpm_min: number;
   mpm_max: number;
-  mpm_data: number[];
   duration_ms: number;
   set_count: number;
   expected_count: number;
   timeline_offset: number;
+  stats_pulse_x?: AxisStats;
+  stats_pulse_y?: AxisStats;
+  stats_pulse_z?: AxisStats;
+  stats_vib_x?: AxisStats;
+  stats_vib_z?: AxisStats;
+}
+
+/** 원시 파형 데이터 — /cycles/daily/waveforms 응답용 */
+export interface WaveformCycle {
+  device_name: string;
+  cycle_index: number;
+  timestamp: string;
+  duration_ms: number;
+  timeline_offset: number;
+  rpm_timeline: number[];
+  rpm_data: number[];
+  mpm_data: number[];
   pulse_timeline: number[];
   pulse_accel_x: number[];
   pulse_accel_y: number[];
   pulse_accel_z: number[];
   vib_accel_x: number[];
   vib_accel_z: number[];
-  stats_pulse_x?: AxisStats;
-  stats_pulse_y?: AxisStats;
-  stats_pulse_z?: AxisStats;
-  stats_vib_x?: AxisStats;
-  stats_vib_z?: AxisStats;
+}
+
+export interface WaveformResponse {
+  cycles: WaveformCycle[];
 }
 
 export interface DailyDataResponse {

@@ -1,6 +1,8 @@
 import { useMemo, useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Plot from 'react-plotly.js';
-import type { CycleData } from '../api/types';
+import type { CycleData, WaveformCycle } from '../api/types';
+import { fetchDailyWaveforms } from '../api/cycles';
 import { getDeviceColors } from '../constants/colors';
 import { useSettings } from '../hooks/useSettings';
 import { useDeviceFilter } from '../hooks/useDeviceFilter';
@@ -8,14 +10,33 @@ import { decimateMinMax } from '../utils/decimation';
 
 interface VibrationChartProps {
   cycles: CycleData[];
+  month: string;
+  date: string;
+  isActive: boolean;
 }
 
-export default function VibrationChart({ cycles }: VibrationChartProps) {
+export default function VibrationChart({ cycles, month, date, isActive }: VibrationChartProps) {
   const { deviceNames } = useSettings();
   const DEVICE_COLORS = useMemo(() => getDeviceColors(deviceNames), [deviceNames]);
   const [colorBySensor, setColorBySensor] = useState(true);
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
   const { visibleDevices, toggleDevice } = useDeviceFilter(deviceNames);
+
+  // 탭 활성화 시에만 파형 데이터 조회
+  const { data: waveformData, isLoading: waveformLoading } = useQuery({
+    queryKey: ['daily-waveforms', month, date],
+    queryFn: () => fetchDailyWaveforms(month, date),
+    enabled: isActive,
+  });
+
+  // waveform을 cycle_index + device_name으로 매칭
+  const waveformMap = useMemo(() => {
+    const map = new Map<string, WaveformCycle>();
+    waveformData?.cycles.forEach(wc => {
+      map.set(`${wc.device_name}_${wc.cycle_index}`, wc);
+    });
+    return map;
+  }, [waveformData]);
 
   const filteredCycles = useMemo(
     () => cycles.filter(c => visibleDevices.has(c.device_name)),
@@ -23,110 +44,68 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
   );
 
   const plotData = useMemo(() => {
-    if (filteredCycles.length === 0) {
-      return {
-        pulse_x_traces: [],
-        pulse_z_traces: [],
-        vib_x_traces: [],
-        vib_z_traces: [],
-        highVibEvents: [],
-      };
-    }
+    const empty = { pulse_x_traces: [] as Array<{ time: number[], data: number[] }>, pulse_z_traces: [] as Array<{ time: number[], data: number[] }>, vib_x_traces: [] as Array<{ time: number[], data: number[] }>, vib_z_traces: [] as Array<{ time: number[], data: number[] }>, highVibEvents: [] as Array<{ time: number; value: number; mpm: number; timestamp: string }> };
 
-    const pulse_x_traces: Array<{ time: number[], data: number[] }> = [];
-    const pulse_z_traces: Array<{ time: number[], data: number[] }> = [];
-    const vib_x_traces: Array<{ time: number[], data: number[] }> = [];
-    const vib_z_traces: Array<{ time: number[], data: number[] }> = [];
-    const highVibEvents: Array<{ time: number; value: number; mpm: number; timestamp: string }> = [];
+    if (filteredCycles.length === 0 || waveformMap.size === 0) return empty;
 
-    const VIB_SAMPLE_RATE = 1000; // Hz
+    const { pulse_x_traces, pulse_z_traces, vib_x_traces, vib_z_traces, highVibEvents } = empty;
 
-    // Gravity offset correction based on sensor mounting direction
+    const VIB_SAMPLE_RATE = 1000;
+
     const getGravityOffset = (deviceName: string, axis: 'x' | 'z'): number => {
-      if (axis === 'x') return 0; // All X axes are horizontal
-      // Z axis offsets due to sensor mounting
-      if (deviceName === 'R1') return 1;   // Upward facing (+1g)
-      if (deviceName === 'R2') return -1;  // Downward facing (-1g)
-      return 0; // R3, R4 horizontal (0g)
+      if (axis === 'x') return 0;
+      if (deviceName === 'R1') return 1;
+      if (deviceName === 'R2') return -1;
+      return 0;
     };
 
-    // Convert timestamp to hours from midnight
     const getHoursFromMidnight = (timestamp: string): number => {
-      const date = new Date(timestamp);
-      const hours = date.getHours();
-      const minutes = date.getMinutes();
-      const seconds = date.getSeconds();
-      const ms = date.getMilliseconds();
-      return hours + minutes / 60 + seconds / 3600 + ms / 3600000;
+      const d = new Date(timestamp);
+      return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600 + d.getMilliseconds() / 3600000;
     };
 
     filteredCycles.forEach((cycle) => {
+      const wf = waveformMap.get(`${cycle.device_name}_${cycle.cycle_index}`);
+      if (!wf) return;
+
       const cycleStartHours = getHoursFromMidnight(cycle.timestamp);
       const deviceName = cycle.device_name;
-
-      // Get gravity offsets for this device
       const pulse_x_offset = getGravityOffset(deviceName, 'x');
       const pulse_z_offset = getGravityOffset(deviceName, 'z');
 
-      // Create separate arrays for this cycle
       const cycle_pulse_x_time: number[] = [];
       const cycle_pulse_x_data: number[] = [];
       const cycle_pulse_z_time: number[] = [];
       const cycle_pulse_z_data: number[] = [];
 
-      // Pulse accelerometer data (comes first)
-      cycle.pulse_timeline.forEach((time, i) => {
+      wf.pulse_timeline.forEach((time, i) => {
         const absoluteTime = cycleStartHours + time / 3600;
 
-        if (i < cycle.pulse_accel_x.length) {
-          const correctedVal = cycle.pulse_accel_x[i] - pulse_x_offset;
+        if (i < wf.pulse_accel_x.length) {
+          const correctedVal = wf.pulse_accel_x[i] - pulse_x_offset;
           cycle_pulse_x_time.push(absoluteTime);
           cycle_pulse_x_data.push(correctedVal);
-
-          // Check for high vibration (> 0.3g)
           if (Math.abs(correctedVal) > 0.3) {
-            highVibEvents.push({
-              time: absoluteTime,
-              value: correctedVal,
-              mpm: cycle.mpm_mean,
-              timestamp: cycle.timestamp
-            });
+            highVibEvents.push({ time: absoluteTime, value: correctedVal, mpm: cycle.mpm_mean, timestamp: cycle.timestamp });
           }
         }
-        if (i < cycle.pulse_accel_z.length) {
-          const correctedVal = cycle.pulse_accel_z[i] - pulse_z_offset;
+        if (i < wf.pulse_accel_z.length) {
+          const correctedVal = wf.pulse_accel_z[i] - pulse_z_offset;
           cycle_pulse_z_time.push(absoluteTime);
           cycle_pulse_z_data.push(correctedVal);
-
-          // Check for high vibration (> 0.3g)
           if (Math.abs(correctedVal) > 0.3) {
-            highVibEvents.push({
-              time: absoluteTime,
-              value: correctedVal,
-              mpm: cycle.mpm_mean,
-              timestamp: cycle.timestamp
-            });
+            highVibEvents.push({ time: absoluteTime, value: correctedVal, mpm: cycle.mpm_mean, timestamp: cycle.timestamp });
           }
         }
       });
 
-      // Add this cycle's pulse traces
-      if (cycle_pulse_x_time.length > 0) {
-        pulse_x_traces.push({ time: cycle_pulse_x_time, data: cycle_pulse_x_data });
-      }
-      if (cycle_pulse_z_time.length > 0) {
-        pulse_z_traces.push({ time: cycle_pulse_z_time, data: cycle_pulse_z_data });
-      }
+      if (cycle_pulse_x_time.length > 0) pulse_x_traces.push({ time: cycle_pulse_x_time, data: cycle_pulse_x_data });
+      if (cycle_pulse_z_time.length > 0) pulse_z_traces.push({ time: cycle_pulse_z_time, data: cycle_pulse_z_data });
 
-      // Calculate pulse duration for VIB offset
-      const pulse_duration = cycle.pulse_timeline.length > 0
-        ? cycle.pulse_timeline[cycle.pulse_timeline.length - 1]
+      const pulse_duration = wf.pulse_timeline.length > 0
+        ? wf.pulse_timeline[wf.pulse_timeline.length - 1]
         : cycle.duration_ms / 1000;
-
-      // VIB accelerometer data (comes after pulse)
       const vib_start_hours = cycleStartHours + pulse_duration / 3600;
-
-      // Get gravity offsets for VIB (same as pulse for same sensor)
       const vib_x_offset = getGravityOffset(deviceName, 'x');
       const vib_z_offset = getGravityOffset(deviceName, 'z');
 
@@ -135,57 +114,32 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
       const cycle_vib_z_time: number[] = [];
       const cycle_vib_z_data: number[] = [];
 
-      cycle.vib_accel_x.forEach((val, i) => {
+      wf.vib_accel_x.forEach((val, i) => {
         const time = vib_start_hours + (i / VIB_SAMPLE_RATE / 3600);
         const correctedVal = val - vib_x_offset;
         cycle_vib_x_time.push(time);
         cycle_vib_x_data.push(correctedVal);
-
-        // Check for high vibration (> 0.3g)
         if (Math.abs(correctedVal) > 0.3) {
-          highVibEvents.push({
-            time: time,
-            value: correctedVal,
-            mpm: cycle.mpm_mean,
-            timestamp: cycle.timestamp
-          });
+          highVibEvents.push({ time, value: correctedVal, mpm: cycle.mpm_mean, timestamp: cycle.timestamp });
         }
       });
 
-      cycle.vib_accel_z.forEach((val, i) => {
+      wf.vib_accel_z.forEach((val, i) => {
         const time = vib_start_hours + (i / VIB_SAMPLE_RATE / 3600);
         const correctedVal = val - vib_z_offset;
         cycle_vib_z_time.push(time);
         cycle_vib_z_data.push(correctedVal);
-
-        // Check for high vibration (> 0.3g)
         if (Math.abs(correctedVal) > 0.3) {
-          highVibEvents.push({
-            time: time,
-            value: correctedVal,
-            mpm: cycle.mpm_mean,
-            timestamp: cycle.timestamp
-          });
+          highVibEvents.push({ time, value: correctedVal, mpm: cycle.mpm_mean, timestamp: cycle.timestamp });
         }
       });
 
-      // Add this cycle's VIB traces
-      if (cycle_vib_x_time.length > 0) {
-        vib_x_traces.push({ time: cycle_vib_x_time, data: cycle_vib_x_data });
-      }
-      if (cycle_vib_z_time.length > 0) {
-        vib_z_traces.push({ time: cycle_vib_z_time, data: cycle_vib_z_data });
-      }
+      if (cycle_vib_x_time.length > 0) vib_x_traces.push({ time: cycle_vib_x_time, data: cycle_vib_x_data });
+      if (cycle_vib_z_time.length > 0) vib_z_traces.push({ time: cycle_vib_z_time, data: cycle_vib_z_data });
     });
 
-    return {
-      pulse_x_traces,
-      pulse_z_traces,
-      vib_x_traces,
-      vib_z_traces,
-      highVibEvents,
-    };
-  }, [filteredCycles]);
+    return { pulse_x_traces, pulse_z_traces, vib_x_traces, vib_z_traces, highVibEvents };
+  }, [filteredCycles, waveformMap]);
 
   // Calculate decimation factor based on zoom level
   const decimationFactor = useMemo(() => {
@@ -230,8 +184,17 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
 
   if (filteredCycles.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-muted text-sm">
+      <div className="vibration-chart flex items-center justify-center h-full text-muted text-sm">
         <p>No vibration data available</p>
+      </div>
+    );
+  }
+
+  if (waveformLoading) {
+    return (
+      <div className="vibration-chart flex items-center justify-center h-full gap-3 text-subtext">
+        <div className="w-6 h-6 border-2 border-overlay border-t-brand rounded-full animate-spin" />
+        <p className="text-sm">파형 데이터 로딩 중...</p>
       </div>
     );
   }
@@ -349,7 +312,7 @@ export default function VibrationChart({ cycles }: VibrationChartProps) {
   const totalHighVibEvents = plotData.highVibEvents.length;
 
   return (
-    <div className="w-full h-full flex flex-col relative">
+    <div className="vibration-chart w-full h-full flex flex-col relative">
       <div className="flex items-center justify-between px-2.5 py-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-text">진동 파형</span>
