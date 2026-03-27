@@ -1,20 +1,29 @@
 import client from './client';
 import type { ScanResult, IngestJob, IngestStatus } from './types';
 
-export const scanFolder = (folder: string) =>
-  client.post<ScanResult>('/ingest/scan', { folder }).then(res => res.data);
+export async function scanFolder(folder: string) {
+  const res = await client.post<ScanResult>('/ingest/scan', { folder });
+  return res.data;
+}
 
-export const ingestFiles = (paths: string[]) =>
-  client.post<IngestJob>('/ingest', { paths }).then(res => res.data);
+export async function ingestFiles(paths: string[]) {
+  const res = await client.post<IngestJob>('/ingest', { paths });
+  return res.data;
+}
 
-export const uploadFiles = (files: File[]) => {
+export async function uploadFiles(files: File[]) {
   const formData = new FormData();
   files.forEach(f => formData.append('files', f));
-  return client.post<IngestJob>('/ingest/upload', formData).then(res => res.data);
-};
+  const res = await client.post<IngestJob>('/ingest/upload', formData);
+  return res.data;
+}
 
-export const getJobStatus = (jobId: string) =>
-  client.get<IngestJob>(`/ingest/job/${jobId}`).then(res => res.data);
+export async function getJobStatus(jobId: string) {
+  const res = await client.get<IngestJob>(`/ingest/job/${jobId}`);
+  return res.data;
+}
 
-export const getIngestStatus = () =>
-  client.get<IngestStatus>('/ingest/status').then(res => res.data);
+export async function getIngestStatus() {
+  const res = await client.get<IngestStatus>('/ingest/status');
+  return res.data;
+}

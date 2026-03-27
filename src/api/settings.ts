@@ -8,11 +8,15 @@ export interface Setting {
   category: string;
 }
 
-export const fetchSettings = () =>
-  client.get<Setting[]>('/settings').then(res => res.data);
+export async function fetchSettings() {
+  const res = await client.get<Setting[]>('/settings');
+  return res.data;
+}
 
-export const updateSetting = (key: string, value: any) =>
-  client.put(`/settings/${key}`, { value });
+export async function updateSetting(key: string, value: any) {
+  await client.put(`/settings/${key}`, { value });
+}
 
-export const resetSettings = () =>
-  client.post('/settings/reset');
+export async function resetSettings() {
+  await client.post('/settings/reset');
+}
