@@ -23,7 +23,7 @@ export default function ChartsPage() {
   const { data: dailyData, isLoading, error } = CyclesQuery.useDailyCycles(month, date);
 
   // 원형 파형 prefetch
-  if(dailyData && month && date){
+  if(month && date){
     CyclesQuery.prefetchDailyWaveForms(month, date);
   }
     
