@@ -1,7 +1,7 @@
-import { useIngestStatus } from '../api/query/ingestQuery';
+import { IngestQuery } from '../api/query/ingestQuery';
 
 export default function IngestStatus() {
-  const { data: status, isLoading, refetch } = useIngestStatus();
+  const { data: status, isLoading, refetch } = IngestQuery.useIngestStatus();
 
   if (isLoading) {
     return (

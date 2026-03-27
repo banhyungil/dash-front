@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
 import { getDeviceColors } from '../constants/colors';
-import { useSettings } from '../api/query/settingsQuery';
+import { SettingsQuery } from '../api/query/settingsQuery';
 import { useDeviceFilter } from '../hooks/useDeviceFilter';
 import { get10MinSlot, getDeviceOffset } from '../utils/chartDataProcessors';
 
@@ -13,7 +13,7 @@ interface RpmChartProps {
 }
 
 export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
-  const { deviceNames } = useSettings();
+  const { deviceNames } = SettingsQuery.useSettings();
   const deviceColors = useMemo(() => getDeviceColors(deviceNames), [deviceNames]);
   const [colorByDevice, setColorByDevice] = useState(false);
   const { visibleDevices, toggleDevice } = useDeviceFilter(deviceNames);

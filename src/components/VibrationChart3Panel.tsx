@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback } from 'react';
 import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
 import { DARK, getDeviceColors } from '../constants/colors';
-import { useSettings } from '../api/query/settingsQuery';
+import { SettingsQuery } from '../api/query/settingsQuery';
 import { useDeviceFilter } from '../hooks/useDeviceFilter';
 import { getHours, getStatsKey } from '../utils/chartDataProcessors';
 
@@ -14,7 +14,7 @@ interface VibrationChart3PanelProps {
 }
 
 export default function VibrationChart3Panel({ cycles }: VibrationChart3PanelProps) {
-  const { deviceNames } = useSettings();
+  const { deviceNames } = SettingsQuery.useSettings();
   const DEVICE_COLORS = useMemo(() => getDeviceColors(deviceNames), [deviceNames]);
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
   const [sensor, setSensor] = useState<Sensor>('VIB');

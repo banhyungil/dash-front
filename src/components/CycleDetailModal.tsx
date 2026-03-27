@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import Plot from 'react-plotly.js';
-import { useCycleDetail, useDailyWaveforms } from '../api/query/cyclesQuery';
+import { CyclesQuery } from '../api/query/cyclesQuery';
 import { darkPlotLayout } from '../utils/plotLayout';
 import type { WaveformCycle } from '../api/types';
 
@@ -13,11 +13,11 @@ interface CycleDetailModalProps {
 }
 
 export default function CycleDetailModal({ month, date, deviceName, cycleIndex, onClose }: CycleDetailModalProps) {
-  const { data, isLoading } = useCycleDetail(month, date, deviceName, cycleIndex);
+  const { data, isLoading } = CyclesQuery.useCycleDetail(month, date, deviceName, cycleIndex);
   const [tab, setTab] = useState<'accel' | 'rpm' | 'vib'>('accel');
 
   // 파형 데이터: daily-waveforms 캐시 활용 (이미 로드됐으면 재요청 없음)
-  const { data: waveformData, isLoading: wfLoading } = useDailyWaveforms(month, date);
+  const { data: waveformData, isLoading: wfLoading } = CyclesQuery.useDailyWaveforms(month, date);
 
   const waveform = useMemo<WaveformCycle | undefined>(() => {
     return waveformData?.cycles.find(

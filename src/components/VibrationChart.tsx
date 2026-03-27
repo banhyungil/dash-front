@@ -1,8 +1,8 @@
 import { useMemo, useState, useCallback } from 'react';
 import Plot from 'react-plotly.js';
 import type { CycleData, WaveformCycle } from '../api/types';
-import { useDailyWaveforms } from '../api/query/cyclesQuery';
-import { useSettings } from '../api/query/settingsQuery';
+import { CyclesQuery } from '../api/query/cyclesQuery';
+import { SettingsQuery } from '../api/query/settingsQuery';
 import { getDeviceColors } from '../constants/colors';
 import { useDeviceFilter } from '../hooks/useDeviceFilter';
 import { decimateMinMax } from '../utils/decimation';
@@ -15,14 +15,14 @@ interface VibrationChartProps {
 }
 
 export default function VibrationChart({ cycles, month, date, isActive }: VibrationChartProps) {
-  const { deviceNames } = useSettings();
+  const { deviceNames } = SettingsQuery.useSettings();
   const DEVICE_COLORS = useMemo(() => getDeviceColors(deviceNames), [deviceNames]);
   const [colorBySensor, setColorBySensor] = useState(true);
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
   const { visibleDevices, toggleDevice } = useDeviceFilter(deviceNames);
 
   // 탭 활성화 시에만 파형 데이터 조회
-  const { data: waveformData, isLoading: waveformLoading } = useDailyWaveforms(month, date, isActive);
+  const { data: waveformData, isLoading: waveformLoading } = CyclesQuery.useDailyWaveforms(month, date, isActive);
 
   // waveform을 cycle_index + device_name으로 매칭
   const waveformMap = useMemo(() => {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useDateStore } from '../stores/useDateStore';
 import { parseYYMM, parseYYMMDD, toYYMM, toYYMMDD } from '../utils/dateFormat';
-import { useMonths, useDates } from '../api/query/cyclesQuery';
+import { CyclesQuery as CyclesQuery } from '../api/query/cyclesQuery';
 import type { DateInfo } from '../api/types';
 
 /** 캘린더에 필요한 월 목록 / 날짜 목록 / 선택 상태를 관리하는 hook. */
@@ -10,7 +10,7 @@ export function useCalendarData() {
   const [displayMonth, setDisplayMonth] = useState<Date | undefined>(undefined);
 
   // 월 목록
-  const { data: months = [] } = useMonths();
+  const { data: months = [] } = CyclesQuery.useMonths();
 
   // 초기 displayMonth 설정
   useEffect(() => {
@@ -32,7 +32,7 @@ export function useCalendarData() {
   const currentMonthKey = displayMonth ? toYYMM(displayMonth) : null;
 
   // 해당 월의 날짜 목록
-  const { data: dateInfos = [] } = useDates(
+  const { data: dateInfos = [] } = CyclesQuery.useDates(
     currentMonthKey,
     months.some((m) => m.month === currentMonthKey),
   );

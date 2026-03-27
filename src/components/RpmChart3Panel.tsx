@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback } from 'react';
 import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
 import { DARK, getDeviceColors } from '../constants/colors';
-import { useSettings } from '../api/query/settingsQuery';
+import { SettingsQuery } from '../api/query/settingsQuery';
 import { useDeviceFilter } from '../hooks/useDeviceFilter';
 import { processData, getHours } from '../utils/chartDataProcessors';
 
@@ -12,7 +12,7 @@ interface RpmChart3PanelProps {
 }
 
 export default function RpmChart3Panel({ cycles, targetRpm }: RpmChart3PanelProps) {
-  const { deviceNames } = useSettings();
+  const { deviceNames } = SettingsQuery.useSettings();
   const DEVICE_COLORS = useMemo(() => getDeviceColors(deviceNames), [deviceNames]);
   const [xRange, setXRange] = useState<[number, number]>([6, 20]);
   const { visibleDevices, toggleDevice } = useDeviceFilter(deviceNames);

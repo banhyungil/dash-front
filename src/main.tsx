@@ -6,9 +6,9 @@ import { Toaster } from 'react-hot-toast'
 import App from './App'
 import './index.css'
 import { queryClient } from './api/query/queryClient'
-import { prefetchSettings } from './api/query/settingsQuery'
+import { SettingsQuery } from './api/query/settingsQuery'
 
-prefetchSettings()
+SettingsQuery.prefetch()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

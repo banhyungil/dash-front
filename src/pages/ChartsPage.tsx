@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { downloadExcel } from '../api/cycles';
 import { useDateStore } from '../stores/useDateStore';
-import { useDailyCycles } from '../api/query/cyclesQuery';
+import { CyclesQuery } from '../api/query/cyclesQuery';
 import DateCalendar from '../components/DateCalendar';
 import KpiCards from '../components/KpiCards';
 import RpmChart from '../components/RpmChart';
@@ -20,7 +20,14 @@ export default function ChartsPage() {
 
   const hasDate = !!month && !!date;
 
-  const { data: dailyData, isLoading, error } = useDailyCycles(month, date);
+  const { data: dailyData, isLoading, error } = CyclesQuery.useDailyCycles(month, date);
+
+  // 원형 파형 prefetch
+  if(dailyData && month && date){
+    CyclesQuery.prefetchDailyWaveForms(month, date);
+  }
+    
+  
 
   const formatDateLabel = (dateStr: string): string => {
     try {

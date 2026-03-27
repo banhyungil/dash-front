@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { scanFolder, ingestFiles, getJobStatus } from '../api/ingest';
-import { ingestQueryKeys } from '../api/query/ingestQuery';
+import { IngestQuery } from '../api/query/ingestQuery';
 import type { ScanFile, IngestResult, IngestJob } from '../api/types';
 
 /** 경로 스캔 + 적재 + 폴링 로직 hook. */
@@ -87,7 +87,7 @@ export function usePathIngest() {
           if (status.status === 'done') {
             if (pollingRef.current) clearInterval(pollingRef.current);
             pollingRef.current = null;
-            queryClient.invalidateQueries({ queryKey: ingestQueryKeys.status });
+            queryClient.invalidateQueries({ queryKey: IngestQuery.keys.status });
             if (status.result) {
               setResult(status.result);
               toast.success(`${status.result.success_cycles} cycles 적재 완료`);
