@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchMonths, fetchDates } from '../api/cycles';
 import { useDateStore } from '../stores/useDateStore';
 import { parseYYMM, parseYYMMDD, toYYMM, toYYMMDD } from '../utils/dateFormat';
+import { useMonths, useDates } from '../api/query/cyclesQuery';
 import type { DateInfo } from '../api/types';
 
 /** 캘린더에 필요한 월 목록 / 날짜 목록 / 선택 상태를 관리하는 hook. */
@@ -11,10 +10,7 @@ export function useCalendarData() {
   const [displayMonth, setDisplayMonth] = useState<Date | undefined>(undefined);
 
   // 월 목록
-  const { data: months = [] } = useQuery({
-    queryKey: ['months'],
-    queryFn: fetchMonths,
-  });
+  const { data: months = [] } = useMonths();
 
   // 초기 displayMonth 설정
   useEffect(() => {
@@ -36,11 +32,10 @@ export function useCalendarData() {
   const currentMonthKey = displayMonth ? toYYMM(displayMonth) : null;
 
   // 해당 월의 날짜 목록
-  const { data: dateInfos = [] } = useQuery({
-    queryKey: ['dates', currentMonthKey],
-    queryFn: () => fetchDates(currentMonthKey!),
-    enabled: !!currentMonthKey && months.some((m) => m.month === currentMonthKey),
-  });
+  const { data: dateInfos = [] } = useDates(
+    currentMonthKey,
+    months.some((m) => m.month === currentMonthKey),
+  );
 
   const dateInfoMap = useMemo(() => {
     const map = new Map<string, DateInfo>();

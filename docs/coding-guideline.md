@@ -5,7 +5,8 @@
 - 파일/변수: `camelCase`, 컴포넌트: `PascalCase`, 상수: `UPPER_SNAKE_CASE`
 - 컴포넌트 파일명은 `PascalCase.tsx` (예: `DateCalendar.tsx`)
 - hooks 파일명은 `useCamelCase.ts` (예: `useCalendarData.ts`)
-- 컴포넌트는 Arrow Function + `export default` (예: `const MyComp = () => {}`)
+- 모듈 export 함수(API, util, hook, 컴포넌트)는 `function` 키워드로 선언
+- API 함수는 `async function` + `await` 사용 (`.then()` 체이닝 지양)
 - `any` 사용 금지 — 타입 정의 또는 `unknown` 사용
 - 미사용 import/변수 금지 (tsconfig에서 에러 처리)
 
@@ -13,7 +14,8 @@
 ```
 src/
   api/         — HTTP 호출만 (axios client)
-  hooks/       — 커스텀 훅 (상태 + API 조합)
+  api/query/   — React Query 래핑 (queryKey 정의 + useQuery hook)
+  hooks/       — 순수 UI 커스텀 훅
   stores/      — 전역 상태 (Zustand)
   utils/       — 순수 함수 (계산, 변환, 포맷)
   components/  — 재사용 UI 컴포넌트
@@ -23,7 +25,8 @@ src/
 
 ## 관심사 분리
 - 컴포넌트: 렌더링만 (API 호출, 비즈니스 로직 금지)
-- hooks: 상태 관리 + API 호출 조합
+- hooks: 순수 UI 로직 (상태 조합, 이벤트 처리)
+- api/query: queryKey 관리 + useQuery 래핑
 - utils: 순수 함수 (계산, 변환)
 - api: HTTP 호출만
 - pages: hooks + 컴포넌트 조합

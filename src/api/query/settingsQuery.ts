@@ -1,16 +1,19 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchSettings } from '../api/settings';
+import { fetchSettings } from '../settings';
+import type { Setting } from '../settings';
 
-/** 설정 API에서 전체 설정을 조회하고 편의 접근자를 제공하는 hook */
+export const settingsQueryKeys = {
+  all: ['settings'] as const,
+};
+
 export function useSettings() {
-  const { data: settings } = useQuery({
-    queryKey: ['settings'],
+  const { data: settings } = useQuery<Setting[]>({
+    queryKey: settingsQueryKeys.all,
     queryFn: fetchSettings,
-    staleTime: 10 * 60 * 1000, // 10분
+    staleTime: 10 * 60 * 1000,
   });
 
-  /** key로 설정값을 조회. 없으면 defaultValue 반환. */
   const get = useMemo(() => {
     const map = new Map<string, any>();
     settings?.forEach(s => map.set(s.key, s.value));

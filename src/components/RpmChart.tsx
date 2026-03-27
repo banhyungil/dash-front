@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { CycleData } from '../api/types';
 import { getDeviceColors } from '../constants/colors';
-import { useSettings } from '../hooks/useSettings';
+import { useSettings } from '../api/query/settingsQuery';
 import { useDeviceFilter } from '../hooks/useDeviceFilter';
 import { get10MinSlot, getDeviceOffset } from '../utils/chartDataProcessors';
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchDailyCycles, downloadExcel } from '../api/cycles';
+import { downloadExcel } from '../api/cycles';
 import { useDateStore } from '../stores/useDateStore';
+import { useDailyCycles } from '../api/query/cyclesQuery';
 import DateCalendar from '../components/DateCalendar';
 import KpiCards from '../components/KpiCards';
 import RpmChart from '../components/RpmChart';
@@ -20,11 +20,7 @@ export default function ChartsPage() {
 
   const hasDate = !!month && !!date;
 
-  const { data: dailyData, isLoading, error } = useQuery({
-    queryKey: ['daily-data', month, date],
-    queryFn: () => fetchDailyCycles(month!, date!),
-    enabled: hasDate,
-  });
+  const { data: dailyData, isLoading, error } = useDailyCycles(month, date);
 
   const formatDateLabel = (dateStr: string): string => {
     try {

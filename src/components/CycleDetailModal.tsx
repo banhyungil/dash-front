@@ -1,8 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import Plot from 'react-plotly.js';
-import { useCycleDetail } from '../hooks/useCycleDetail';
-import { fetchDailyWaveforms } from '../api/cycles';
+import { useCycleDetail, useDailyWaveforms } from '../api/query/cyclesQuery';
 import { darkPlotLayout } from '../utils/plotLayout';
 import type { WaveformCycle } from '../api/types';
 
@@ -15,18 +13,15 @@ interface CycleDetailModalProps {
 }
 
 export default function CycleDetailModal({ month, date, deviceName, cycleIndex, onClose }: CycleDetailModalProps) {
-  const { data, isLoading } = useCycleDetail(date, deviceName, cycleIndex);
+  const { data, isLoading } = useCycleDetail(month, date, deviceName, cycleIndex);
   const [tab, setTab] = useState<'accel' | 'rpm' | 'vib'>('accel');
 
   // 파형 데이터: daily-waveforms 캐시 활용 (이미 로드됐으면 재요청 없음)
-  const { data: waveformData, isLoading: wfLoading } = useQuery({
-    queryKey: ['daily-waveforms', month, date],
-    queryFn: () => fetchDailyWaveforms(month, date),
-  });
+  const { data: waveformData, isLoading: wfLoading } = useDailyWaveforms(month, date);
 
   const waveform = useMemo<WaveformCycle | undefined>(() => {
     return waveformData?.cycles.find(
-      wc => wc.device_name === deviceName && wc.cycle_index === cycleIndex
+      (wc: WaveformCycle) => wc.device_name === deviceName && wc.cycle_index === cycleIndex
     );
   }, [waveformData, deviceName, cycleIndex]);
 
