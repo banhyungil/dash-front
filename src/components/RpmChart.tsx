@@ -24,7 +24,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
     }
 
     // Group by device_name
-    const deviceData: Record<string, { x: number[]; y: number[]; text: string[]; cycleIndices: number[] }> = {};
+    const deviceData: Record<string, { xList: number[]; yList: number[]; texts: string[]; cycleIndices: number[] }> = {};
 
     // Store cycle rectangles for rendering
     const cycleRects: Array<{
@@ -44,7 +44,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
     cycles.forEach((cycle) => {
       const deviceName = cycle.device_name;
       if (!deviceData[deviceName]) {
-        deviceData[deviceName] = { x: [], y: [], text: [], cycleIndices: [] };
+        deviceData[deviceName] = { xList: [], yList: [], texts: [], cycleIndices: [] };
       }
 
       const avgMpm = Math.round(cycle.mpm_mean); // Round to integer
@@ -64,10 +64,10 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
       const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
       // Store for legacy point display (for hover)
-      deviceData[deviceName].x.push(cycleStartHours);
-      deviceData[deviceName].y.push(avgMpm);
+      deviceData[deviceName].xList.push(cycleStartHours);
+      deviceData[deviceName].yList.push(avgMpm);
       deviceData[deviceName].cycleIndices.push(cycle.cycle_index);
-      deviceData[deviceName].text.push(
+      deviceData[deviceName].texts.push(
         `Time: ${timeStr}<br>` +
         `Duration: ${durationSeconds.toFixed(1)}s<br>` +
         `MPM: ${avgMpm}<br>` +
@@ -87,15 +87,15 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
         timeStr: timeStr,
         timestamp: cycle.timestamp,
         duration_s: durationSeconds,
-        color: deviceColors[deviceName] || '#F49E0A'
+        color: '#F49E0A'
       });
     });
 
     // Calculate operation segments for background shapes
     const allPoints: Array<{ x: number; y: number }> = [];
     Object.values(deviceData).forEach(data => {
-      data.x.forEach((x, i) => {
-        allPoints.push({ x, y: data.y[i] });
+      data.xList.forEach((x, i) => {
+        allPoints.push({ x, y: data.yList[i] });
       });
     });
     allPoints.sort((a, b) => a.x - b.x);
@@ -127,8 +127,8 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
       });
     }
 
-    return { deviceData, deviceColors, operationSegments, cycleRects };
-  }, [cycles, deviceColors]);
+    return { deviceData, operationSegments, cycleRects };
+  }, [cycles]); // end plotData
 
   if (cycles.length === 0) {
     return (
@@ -140,15 +140,15 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
 
   // Create invisible scatter trace for hover (at center of each bar), filtered by visible devices
   const allPoints: Array<{ x: number; y: number; text: string; deviceName: string; cycleIndex: number }> = [];
-  Object.entries(plotData.deviceData || {}).forEach(([deviceName, data]) => {
+  Object.entries(plotData.deviceData || {}).forEach(([deviceName, deviceInfo]) => {
     if (!visibleDevices.has(deviceName)) return;
-    data.x.forEach((x, i) => {
+    deviceInfo.xList.forEach((x, i) => {
       allPoints.push({
         x,
-        y: data.y[i],
-        text: data.text[i],
+        y: deviceInfo.yList[i],
+        text: deviceInfo.texts[i],
         deviceName,
-        cycleIndex: data.cycleIndices[i],
+        cycleIndex: deviceInfo.cycleIndices[i],
       });
     });
   });
@@ -264,7 +264,7 @@ export default function RpmChart({ cycles, onCycleClick }: RpmChartProps) {
               x1: rect.x1,
               y0: rect.y0,
               y1: rect.y1,
-              fillcolor: colorByDevice ? rect.color : '#F49E0A', // Orange for single color
+              fillcolor: colorByDevice ? deviceColors[rect.deviceName] : '#F49E0A', // Orange for single color
               opacity: 0.9,
               line: {
                 color: colorByDevice ? rect.color : '#F49E0A',
