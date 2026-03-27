@@ -1,11 +1,19 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSettings } from '../settings';
+import { queryClient } from './queryClient';
 import type { Setting, SettingsMap } from '../types';
 
 export const settingsQueryKeys = {
   all: ['settings'] as const,
 };
+
+export function prefetchSettings() {
+  return queryClient.prefetchQuery({
+    queryKey: settingsQueryKeys.all,
+    queryFn: fetchSettings,
+  });
+}
 
 export function useSettings() {
   const { data: settings } = useQuery<Setting[]>({
